@@ -1,0 +1,7 @@
+# --------------------
+# Ballerina backend
+# --------------------
+civilquest_backend/target/
+civilquest_backend/**/.ballerina/
+civilquest_backend/generated/
+civilquest_backend/Config.toml

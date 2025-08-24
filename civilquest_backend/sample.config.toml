@@ -1,0 +1,35 @@
+# JWT configuration
+[eminence.civilquest_api.token]
+secret_key = "ballerina"
+private_key_path = "./keys/private.key"
+public_key_path = "./keys/cert.pem"
+issuer = "wso2"
+audience = "ballerina"
+
+
+# Server configuration
+[eminence.civilquest_api.server]
+server_port = 4444
+
+
+# Database configuration
+[eminence.civilquest_api.database]
+mongodb_con_string = "<connection_string>"
+mongodb_database = "<database_name>"
+
+# Email (Mailtrap)
+[eminence.civilquest_api.email]
+SMTP_HOST = "<host>"
+SMTP_PORT = 2525
+SMTP_USER = "<user>"
+SMTP_PASS = "<pass>"
+SMTP_SECURITY = "START_TLS_AUTO"
+
+FROM_EMAIL = "civilquest@gmail.com"
+
+# Cloudinary
+[eminence.civilquest_api.cloudinary]
+cloud_name = "<cloud_name>"
+api_key = "<api_key>"
+api_secret = "<api_secret>"
+upload_preset = "<upload_preset>"
