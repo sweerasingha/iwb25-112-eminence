@@ -7,12 +7,30 @@ import LoadingButton from "../../components/ui/button/index";
 import { ApiResponse, ProvincialAdmin } from "@/types";
 import { useForm } from "@/hooks/useForm";
 import { InputField } from "@/components/ui/input";
+import { ComboBox } from "@/components/ui/comboBox";
 
 interface AddEditProps {
   selectedAdmin?: ProvincialAdmin;
   useAdminHook: any;
   handleClose: () => void;
 }
+const PROVINCES = [
+  "Western",
+  "Central",
+  "Southern",
+  "Northern",
+  "Eastern",
+  "North Western",
+  "North Central",
+  "Uva",
+  "Sabaragamuwa",
+] as const;
+
+const ProvinceEnum = z.enum(PROVINCES);
+const ProvinceField = z
+  .union([ProvinceEnum, z.literal("")])
+  .refine((v) => v !== "", { message: "Please select a province" });
+
 const CreateAdminSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email format"),
@@ -20,7 +38,17 @@ const CreateAdminSchema = z.object({
   phoneNumber: z
     .string()
     .min(10, "Phone number must be at least 10 characters long"),
-  province: z.string().min(2, "Province must be at least 2 characters long"),
+  province: ProvinceField,
+});
+
+const UpdateAdminSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Invalid email format"),
+  password: z.string().optional().or(z.literal("")),
+  phoneNumber: z
+    .string()
+    .min(10, "Phone number must be at least 10 characters long"),
+  province: ProvinceField,
 });
 
 const AddEdit = ({
@@ -28,15 +56,23 @@ const AddEdit = ({
   useAdminHook,
   handleClose,
 }: AddEditProps) => {
+  const schema = selectedAdmin ? UpdateAdminSchema : CreateAdminSchema;
+
+  type Province = (typeof PROVINCES)[number];
+  const initialProvince: Province | "" = (() => {
+    const p = selectedAdmin?.province ?? "";
+    return (PROVINCES as readonly string[]).includes(p) ? (p as Province) : "";
+  })();
+
   const { formData, handleChange, errors, validate } = useForm(
     {
       name: selectedAdmin?.name || "",
       email: selectedAdmin?.email || "",
       password: selectedAdmin?.password || "",
       phoneNumber: selectedAdmin?.phoneNumber || "",
-      province: selectedAdmin?.province || "",
+      province: initialProvince,
     },
-    CreateAdminSchema
+    schema
   );
 
   const handleSubmit = async () => {
@@ -46,8 +82,7 @@ const AddEdit = ({
         const updatedAdmin: ProvincialAdmin = {
           _id: selectedAdmin._id,
           name: formData.name,
-          email: formData.email,
-          password: formData.password,
+          email: selectedAdmin.email,
           phoneNumber: formData.phoneNumber,
           province: formData.province,
         };
@@ -76,23 +111,27 @@ const AddEdit = ({
         onChange={handleChange}
         error={errors.name}
       />
-      <InputField
-        name={"email"}
-        label={"Email"}
-        type={"email"}
-        value={formData.email}
-        onChange={handleChange}
-        error={errors.email}
-        
-      />
-      <InputField
-        name={"password"}
-        label={"Password"}
-        type={"password"}
-        value={formData.password}
-        onChange={handleChange}
-        error={errors.password}
-      />
+      {!selectedAdmin && (
+        <>
+          <InputField
+            name={"email"}
+            label={"Email"}
+            type={"email"}
+            value={formData.email}
+            onChange={handleChange}
+            error={errors.email}
+          />
+          <InputField
+            name={"password"}
+            label={"Password"}
+            type={"password"}
+            value={formData.password}
+            onChange={handleChange}
+            showToggle
+            error={errors.password}
+          />
+        </>
+      )}
       <InputField
         name={"phoneNumber"}
         label={"Phone Number"}
@@ -100,12 +139,13 @@ const AddEdit = ({
         onChange={handleChange}
         error={errors.phoneNumber}
       />
-      <InputField
+      <ComboBox
         name={"province"}
         label={"Province"}
         value={formData.province}
-        onChange={handleChange}
-        error={errors.province}
+        onChange={handleChange as any}
+        options={PROVINCES.map((p) => ({ name: p, value: p }))}
+        error={errors.province as string}
       />
 
       <LoadingButton

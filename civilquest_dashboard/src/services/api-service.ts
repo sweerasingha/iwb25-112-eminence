@@ -9,15 +9,40 @@ const apiService = axios.create({
   },
 });
 
-const getErrorMessage = (error: {
-  response: { data: { message: unknown } };
-  request: unknown;
-}) => {
-  if (error.response) {
-    return error.response.data.message || "Server error";
-  } else if (error.request) {
-    return "No response from server";
-  } else {
+const getErrorMessage = (err: any): string => {
+  try {
+    const statusText = err?.response?.statusText as string | undefined;
+    const data = err?.response?.data;
+
+    if (data) {
+      if (typeof data === "string") return data;
+      const fromErrorKey = ((): string | undefined => {
+        const v = (data as any).error;
+        if (!v) return undefined;
+        if (typeof v === "string") return v;
+        if (Array.isArray(v)) return v.filter(Boolean).join("\n");
+        if (typeof v === "object") return Object.values(v).join("\n");
+        return String(v);
+      })();
+      if (fromErrorKey) return fromErrorKey;
+      const alt = (data.message ?? data.msg ?? data.detail) as unknown;
+      if (typeof alt === "string" && alt) return alt;
+
+      const errors = (data.errors ?? data.errorMessages ?? []) as unknown;
+      if (Array.isArray(errors) && errors.length > 0) {
+        const parts = errors.map((e) => {
+          if (typeof e === "string") return e;
+          if (e && typeof e === "object") return e.message ?? JSON.stringify(e);
+          return String(e);
+        });
+        return parts.join("\n");
+      }
+    }
+
+    if (err?.request) return "No response from server";
+    if (typeof err?.message === "string" && err.message) return err.message;
+    return statusText || "Request failed";
+  } catch {
     return "Request failed";
   }
 };
@@ -51,7 +76,7 @@ apiService.interceptors.request.use(async (config) => {
 apiService.interceptors.response.use(
   (response) => response.data,
   (error) => {
-    const errorMessage = getErrorMessage(error);
+  const errorMessage = getErrorMessage(error);
 
     if (error.response && error.response.status === 403) {
       toast.error("Your not Authorized for this action");
@@ -63,12 +88,7 @@ apiService.interceptors.response.use(
       localStorage.removeItem(STORAGE_KEYS.USER_TOKEN);
       window.location.href = "/";
     }
-
-    console.log("API request failed:", errorMessage);
-    console.log("Full error object:", error);
-
-    const e = error.response?.data || "faild to do this request";
-    toast.error(e);
+    toast.error(errorMessage || "Request failed");
 
     return Promise.reject(error);
   }

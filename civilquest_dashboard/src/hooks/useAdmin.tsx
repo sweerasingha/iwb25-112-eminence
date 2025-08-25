@@ -4,14 +4,20 @@ import { ApiResponse, ProvincialAdmin } from "@/types";
 import { toast } from "react-toastify";
 
 const useAdmin = () => {
-  const [admins, setAdmins] = useState([]);
+  const [admins, setAdmins] = useState<ProvincialAdmin[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchAdmins = async (): Promise<ApiResponse> => {
     setLoading(true);
     try {
-      const response = await adminService.getAllAdmin();
-      setAdmins((response as any) ?? []);
+  const response = await adminService.getAllAdmin();
+  const list: ProvincialAdmin[] = Array.isArray(response) ? [...response] : [];
+      list.sort((a: any, b: any) => {
+        const aTime = new Date(a?.createdAt || a?.updatedAt || 0).getTime();
+        const bTime = new Date(b?.createdAt || b?.updatedAt || 0).getTime();
+        return bTime - aTime;
+      });
+      setAdmins(list);
       return {
         status: true,
       };
@@ -32,6 +38,7 @@ const useAdmin = () => {
     try {
       const response = await adminService.createAdmin(adminData);
       toast.success("Admin created successfully");
+      await fetchAdmins();
       return {
         status: true,
       };
@@ -47,6 +54,7 @@ const useAdmin = () => {
     try {
       await adminService.deleteAdmin(adminId);
       toast.success("Admin deleted successfully");
+      await fetchAdmins();
       return {
         status: true,
       };
@@ -64,6 +72,7 @@ const useAdmin = () => {
     try {
       await adminService.updateAdmin(adminData);
       toast.success("Admin updated successfully");
+      await fetchAdmins();
       return {
         status: true,
       };
