@@ -29,7 +29,7 @@ export interface ProvincialAdmin {
   _id?: { $oid: string };
   name: string;
   email: string;
-  password: string;
+  password?: string;
   phoneNumber: string;
   province: string;
   verified?: boolean;

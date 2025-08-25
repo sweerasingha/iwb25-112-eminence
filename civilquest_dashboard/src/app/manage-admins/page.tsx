@@ -22,6 +22,8 @@ export default function ManageAdmin() {
   useEffect(() => {
     useAdminHook.fetchAdmins();
   }, []);
+  
+  const data = (useAdminHook.admins || []).slice();
 
   const columns: ColumnDef<ProvincialAdmin>[] = [
     {
@@ -114,7 +116,7 @@ export default function ManageAdmin() {
         </h1>
       </div>
       <div className="m-12 p-6 bg-white rounded-lg shadow-md border border-gray-200">
-        <DataTable
+  <DataTable
           buttons={[
             <StaticButton
               key="add-Admin"
@@ -126,7 +128,7 @@ export default function ManageAdmin() {
             />,
           ]}
           columns={columns}
-          data={useAdminHook.admins || []}
+          data={data}
         />
       </div>
     </div>

@@ -11,12 +11,14 @@ export const createAdmin = async (data: ProvincialAdmin) =>
     province: data.province,
   });
 
-export const getAllAdmin = async () => await apiService.get(`/accounts/admins`);
+export const getAllAdmin = async (): Promise<ProvincialAdmin[]> =>
+  await apiService.get(`/accounts/admins`);
 
 export const updateAdmin = async (data: ProvincialAdmin) => {
   return await apiService.put(`/accounts/admins/${data._id?.$oid}`, {
     name: data.name,
     phoneNumber: data.phoneNumber,
+    province: data.province,
   });
 };
 

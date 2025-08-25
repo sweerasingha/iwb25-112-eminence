@@ -22,11 +22,11 @@ public listener http:Listener httpListener = new (server_port);
 
 @http:ServiceConfig {
     cors: {
-        allowOrigins: ["*"],
-        allowMethods: ["*"],
-        allowHeaders: ["*"],
+        allowOrigins: ["http://localhost:3000", "http://localhost:3001"],
+        allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allowHeaders: ["Content-Type", "Authorization", "Accept", "Origin", "X-Requested-With"],
         allowCredentials: true,
-        exposeHeaders: ["*"]
+        exposeHeaders: ["Content-Type", "Authorization"]
     }
 }
 service /api on httpListener {

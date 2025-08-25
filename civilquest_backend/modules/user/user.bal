@@ -525,6 +525,9 @@ public isolated function updateAdmin(http:Caller caller, http:Request req, strin
     if m.hasKey("phoneNumber") {
         updateData["phoneNumber"] = m["phoneNumber"];
     }
+    if m.hasKey("province") {
+        updateData["province"] = m["province"];
+    }
 
     updateData["updatedAt"] = time:utcToString(time:utcNow());
 
