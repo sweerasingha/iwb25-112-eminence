@@ -1,5 +1,5 @@
-import ballerina/test;
 import ballerina/email;
+import ballerina/test;
 
 @test:Config {}
 function testToSecurityMappings() {

@@ -104,7 +104,7 @@ function testValidateEventCreationComposite() {
     string futureDate = "2099-12-31";
     map<json> goodEvent = {
         "eventTitle": "Valid Event Title",
-    "eventDescription": "This is a sufficiently long valid event description text that exceeds twenty characters and has only letters numbers and spaces",
+        "eventDescription": "This is a sufficiently long valid event description text that exceeds twenty characters and has only letters numbers and spaces",
         "date": futureDate,
         "startTime": "09:00",
         "endTime": "10:00",

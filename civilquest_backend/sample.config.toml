@@ -28,8 +28,11 @@ SMTP_SECURITY = "START_TLS_AUTO"
 FROM_EMAIL = "civilquest@gmail.com"
 
 # Cloudinary
-[eminence.civilquest_api.cloudinary]
+[sachisw.cloudinary]
 cloud_name = "<cloud_name>"
 api_key = "<api_key>"
 api_secret = "<api_secret>"
 upload_preset = "<upload_preset>"
+
+[ballerina.log]
+level = "INFO"

@@ -5,3 +5,11 @@ civilquest_backend/target/
 civilquest_backend/**/.ballerina/
 civilquest_backend/generated/
 civilquest_backend/Config.toml
+
+# --------------------
+# Civil Quest Frontend
+# --------------------
+civilquest_dashboard/node_modules/
+civilquest_dashboard/dist/
+civilquest_dashboard/.env
+civilquest_dashboard/.next/

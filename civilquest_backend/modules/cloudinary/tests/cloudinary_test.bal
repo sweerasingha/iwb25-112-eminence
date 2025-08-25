@@ -1,31 +1,77 @@
 import ballerina/test;
+import sachisw/cloudinary.core as core;
 
+// Mock the imported functions from `sachisw/cloudinary` so tests don't call the real API.
+@test:Mock {
+    moduleName: "sachisw/cloudinary",
+    functionName: "uploadSingleImage"
+}
+test:MockFunction uploadSingleImageMock = new ();
+
+@test:Mock {
+    moduleName: "sachisw/cloudinary",
+    functionName: "deleteSingleImage"
+}
+test:MockFunction deleteSingleImageMock = new ();
+
+// No custom mock functions needed; we use thenReturn() with values and errors.
+
+// --- Tests ---
 @test:Config {}
-function testIsLeap() {
-    test:assertTrue(isLeap(2024));
-    test:assertFalse(isLeap(2023));
-    test:assertTrue(isLeap(2000)); // divisible by 400
-    test:assertFalse(isLeap(1900)); // divisible by 100 not 400
+function testUploadImage_success() {
+    // Return a fake Cloudinary response typed as core:UploadResult
+    core:UploadResult mockUpload = {
+        secure_url: "https://res.cloudinary.com/test/profiles/pic.jpg",
+        public_id: "profiles/pic.jpg",
+        "original_filename": "pic.jpg",
+        "folder": "profiles"
+    };
+    test:when(uploadSingleImageMock).thenReturn(mockUpload);
+
+    byte[] data = [0x61, 0x62, 0x63]; // "abc"
+    json|error res = uploadImage(data, "profiles", "pic.jpg");
+
+    test:assertFalse(res is error, msg = "expected json, got error");
+    if res is map<json> {
+        test:assertEquals(<string>res["public_id"], "profiles/pic.jpg");
+        test:assertEquals(<string>res["folder"], "profiles");
+        test:assertEquals(<string>res["original_filename"], "pic.jpg");
+    } else {
+        test:assertFail("expected JSON object");
+    }
 }
 
 @test:Config {}
-function testDaysSinceEpoch() {
-    test:assertEquals(daysSinceEpoch(1970, 1, 1), 0);
-    test:assertEquals(daysSinceEpoch(1970, 1, 2), 1);
-    test:assertEquals(daysSinceEpoch(1970, 2, 1), 31);
-    // Feb 29 1972: 1970 (365) + 1971 (365) = 730; Jan 1972 (31) + (29 - 1) = 28 => 31+28 = 59; total 789
-    test:assertEquals(daysSinceEpoch(1972, 2, 29), 789);
+function testUploadImage_error() {
+    // Return an error to simulate failure
+    test:when(uploadSingleImageMock).thenReturn(error("mock upload failed"));
+
+    byte[] empty = [];
+    json|error res = uploadImage(empty, "x", "y");
+    test:assertTrue(res is error, msg = "expected error on mocked failure");
 }
 
 @test:Config {}
-function testToHex() {
-    byte[] b = [0x00, 0xAB, 0xFF];
-    string h = toHex(b);
-    test:assertEquals(h, "00abff");
+function testDeleteImage_success() {
+    core:DestroyResult mockDestroy = { result: "ok", "public_id": "profiles/pic.jpg" };
+    test:when(deleteSingleImageMock).thenReturn(mockDestroy);
+
+    string publicId = "profiles/pic.jpg";
+    json|error res = deleteImage(publicId);
+    test:assertFalse(res is error, msg = "expected json, got error");
+    if res is map<json> {
+        test:assertEquals(<string>res["result"], "ok");
+        test:assertEquals(<string>res["public_id"], publicId);
+    } else {
+        test:assertFail("expected JSON object");
+    }
 }
 
 @test:Config {}
-function testGetEpochSecondsNonNegative() {
-    int secs = getEpochSeconds();
-    test:assertTrue(secs > 0);
+function testDeleteImage_error() {
+    test:when(deleteSingleImageMock).thenReturn(error("mock delete failed"));
+
+    json|error res = deleteImage("profiles/missing.jpg");
+    test:assertTrue(res is error, msg = "expected error on mocked delete failure");
 }
+

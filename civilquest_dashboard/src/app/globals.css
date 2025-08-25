@@ -1,0 +1,194 @@
+@import "tailwindcss";
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --primary: 214 69% 35%;
+  --secondary: 201 88% 48%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+
+  --primary-foreground: 210 40% 98%;
+
+  --secondary: 210 40% 96.1%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+
+  --accent: 201 88% 48%;
+  --accent-foreground: 222.2 47.4% 11.2%;
+
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 222.2 84% 4.9%;
+
+  --radius: 0.5rem;
+
+  --sidebar-background: 0 0% 98%;
+
+  --sidebar-foreground: 240 5.3% 26.1%;
+
+  --sidebar-primary: 240 5.9% 10%;
+
+  --sidebar-primary-foreground: 0 0% 98%;
+
+  --sidebar-accent: 240 4.8% 95.9%;
+
+  --sidebar-accent-foreground: 240 5.9% 10%;
+
+  --sidebar-border: 220 13% 91%;
+
+  --sidebar-ring: 217.2 91.2% 59.8%;
+}
+
+@theme {
+  --color-background: #ffffff;
+  --color-foreground: #0d1521;
+
+  --color-primary: #000000;
+  --color-primary-foreground: #f6fafd;
+
+  --color-secondary: #454545;
+  --color-secondary-foreground: #0d1521;
+
+  --color-accent: #0ba1e7;
+  --color-accent-foreground: #0d1521;
+
+  --color-muted: #e9f2f9;
+  --color-muted-foreground: #708090;
+
+  --color-destructive: #f04444;
+  --color-destructive-foreground: #f6fafd;
+
+  --color-border: #d8e1ea;
+  --color-input: #d8e1ea;
+  --color-ring: #0d1521;
+
+  --color-sidebar-background: #fafafa;
+  --color-sidebar-foreground: #434343;
+  --color-sidebar-primary: #1a1a1a;
+  --color-sidebar-primary-foreground: #fafafa;
+  --color-sidebar-accent: #f4f4f4;
+  --color-sidebar-accent-foreground: #1a1a1a;
+  --color-sidebar-border: #e5ebf0;
+  --color-sidebar-ring: #3b82f6;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-lora), -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-playfair), "Georgia", serif;
+}
+
+.font-sans {
+  font-family: var(--font-lora), -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+}
+
+.font-serif {
+  font-family: var(--font-playfair), "Georgia", serif;
+}
+
+.font-display {
+  font-family: var(--font-bokor), -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+}
+
+.font-display {
+  font-family: var(--font-pacifico), "Pacifico", cursive;
+}
+
+/* In your global CSS or a module */
+.bg-pos-mobile {
+  background-position: center center;
+}
+@media (min-width: 768px) {
+  .bg-pos-md {
+    background-position: -420px -500px; /* example */
+  }
+}
+@media (min-width: 1024px) {
+  .bg-pos-lg {
+    background-position: -420px -500px; /* example */
+  }
+}
+.loader {
+  width: 48px;
+  height: 48px;
+  display: inline-block;
+  position: relative;
+}
+.loader::after,
+.loader::before {
+  content: "";
+  box-sizing: border-box;
+  width: 48px;
+  height: 48px;
+  border: 2px solid #000000;
+  position: absolute;
+  left: 0;
+  top: 0;
+  animation: rotationBreak 3s ease-in-out infinite alternate;
+}
+.loader::after {
+  border-color: #ff950a;
+  animation-direction: alternate-reverse;
+}
+
+@keyframes rotationBreak {
+  0% {
+    transform: rotate(0);
+  }
+  25% {
+    transform: rotate(90deg);
+  }
+  50% {
+    transform: rotate(180deg);
+  }
+  75% {
+    transform: rotate(270deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* xsm: ≤354px */
+@media (max-width: 380px) {
+  .xsm\:h1-text {
+    font-size: 2rem !important;
+  }
+  .xsm\:h2-text {
+    font-size: 1.2rem !important;
+  }
+  .xsm\:h3-text {
+    font-size: 1rem !important;
+  }
+  .xsm\:h5-text {
+    font-size: 0.7rem !important;
+  }
+}
+
+@supports (-webkit-touch-callout: none) {
+  .ios-bg {
+    background-attachment: scroll !important;
+  }
+}
