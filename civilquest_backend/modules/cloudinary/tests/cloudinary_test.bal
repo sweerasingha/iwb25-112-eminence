@@ -1,4 +1,5 @@
 import ballerina/test;
+
 import sachisw/cloudinary.core as core;
 
 // Mock the imported functions from `sachisw/cloudinary` so tests don't call the real API.
@@ -53,7 +54,7 @@ function testUploadImage_error() {
 
 @test:Config {}
 function testDeleteImage_success() {
-    core:DestroyResult mockDestroy = { result: "ok", "public_id": "profiles/pic.jpg" };
+    core:DestroyResult mockDestroy = {result: "ok", "public_id": "profiles/pic.jpg"};
     test:when(deleteSingleImageMock).thenReturn(mockDestroy);
 
     string publicId = "profiles/pic.jpg";

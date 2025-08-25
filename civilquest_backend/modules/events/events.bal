@@ -132,6 +132,8 @@ public type Event record {|
     string? endTime;
     string location;
     string city;
+    float? latitude;
+    float? longitude;
     string eventTitle;
     string eventType;
     string eventDescription;
@@ -269,6 +271,8 @@ public function createEvent(http:Caller caller, http:Request req) returns error?
         endTime: (),
         location: <string>m["location"],
         city: <string>m["city"],
+        latitude: (),
+        longitude: (),
         eventTitle: <string>m["eventTitle"],
         eventType: <string>m["eventType"],
         eventDescription: <string>m["eventDescription"],
@@ -283,6 +287,26 @@ public function createEvent(http:Caller caller, http:Request req) returns error?
 
     if m.hasKey("endTime") {
         evt.endTime = <string>m["endTime"];
+    }
+    if m.hasKey("latitude") {
+        float|error lat = float:fromString(m["latitude"].toString());
+        if lat is float {
+            if lat >= -90.0 && lat <= 90.0 {
+                evt.latitude = lat;
+            } else {
+                return utils:badRequest(caller, "Invalid latitude");
+            }
+        }
+    }
+    if m.hasKey("longitude") {
+        float|error lon = float:fromString(m["longitude"].toString());
+        if lon is float {
+            if lon >= -180.0 && lon <= 180.0 {
+                evt.longitude = lon;
+            } else {
+                return utils:badRequest(caller, "Invalid longitude");
+            }
+        }
     }
 
     // Insert the event
@@ -578,6 +602,8 @@ public function getEvents(http:Caller caller, http:Request req) returns error? {
             "endTime": event.endTime,
             "location": event.location,
             "city": event.city,
+            "latitude": event.latitude,
+            "longitude": event.longitude,
             "eventTitle": event.eventTitle,
             "eventType": event.eventType,
             "eventDescription": event.eventDescription,
@@ -765,6 +791,8 @@ public function getEvent(http:Caller caller, http:Request req, string eventId) r
         endTime: event.endTime,
         location: event.location,
         city: event.city,
+        latitude: event.latitude,
+        longitude: event.longitude,
         eventTitle: event.eventTitle,
         eventType: event.eventType,
         eventDescription: event.eventDescription,
@@ -830,6 +858,28 @@ public function updateEvent(http:Caller caller, http:Request req, string eventId
     }
     if m.hasKey("city") {
         updateData["city"] = m["city"];
+    }
+    if m.hasKey("latitude") {
+        float|error lat = float:fromString(m["latitude"].toString());
+        if lat is float {
+            if !(lat >= -90.0 && lat <= 90.0) {
+                return utils:badRequest(caller, "Invalid latitude");
+            }
+            updateData["latitude"] = lat;
+        } else {
+            return utils:badRequest(caller, "Invalid latitude");
+        }
+    }
+    if m.hasKey("longitude") {
+        float|error lon = float:fromString(m["longitude"].toString());
+        if lon is float {
+            if !(lon >= -180.0 && lon <= 180.0) {
+                return utils:badRequest(caller, "Invalid longitude");
+            }
+            updateData["longitude"] = lon;
+        } else {
+            return utils:badRequest(caller, "Invalid longitude");
+        }
     }
     if m.hasKey("date") {
         string dateStr = m["date"].toString();

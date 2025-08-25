@@ -269,6 +269,20 @@ public isolated function validateEventCreation(map<json> eventData) returns stri
         }
     }
 
+    // Validate optional geolocation if provided
+    if eventData.hasKey("latitude") && eventData["latitude"] != () {
+        float|error lat = float:fromString(eventData["latitude"].toString());
+        if lat is error || !(lat >= -90.0 && lat <= 90.0) {
+            errors.push("Invalid latitude value");
+        }
+    }
+    if eventData.hasKey("longitude") && eventData["longitude"] != () {
+        float|error lon = float:fromString(eventData["longitude"].toString());
+        if lon is error || !(lon >= -180.0 && lon <= 180.0) {
+            errors.push("Invalid longitude value");
+        }
+    }
+
     return errors;
 }
 

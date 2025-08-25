@@ -29,3 +29,11 @@ function testValidateRoleTransition() {
     test:assertTrue(validateRoleTransition("USER", "PREMIUM_PENDING"));
     test:assertFalse(validateRoleTransition("SUPER_ADMIN", "ADMIN"));
 }
+
+@test:Config {}
+function testCalculateHaversineDistanceMeters() {
+    float d0 = calculateHaversineDistanceMeters(6.9271, 79.8612, 6.9271, 79.8612);
+    test:assertTrue(d0 < 1.0, msg = "Distance for identical points should be ~0");
+    float d1 = calculateHaversineDistanceMeters(6.9271, 79.8612, 6.9361, 79.8612);
+    test:assertTrue(d1 > 500.0, msg = "Distance should exceed 500m");
+}

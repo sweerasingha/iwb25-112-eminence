@@ -30,6 +30,8 @@ public type Event record {|
     string? endTime;
     string location;
     string city;
+    float? latitude;
+    float? longitude;
     string eventTitle;
     string eventType;
     string eventDescription;
@@ -80,6 +82,28 @@ public function participateInEvent(http:Caller caller, http:Request req, string 
     // Allow only approved events
     if event.status != "APPROVED" {
         return utils:forbidden(caller, "Event is not approved for participation");
+    }
+
+    // Extract user-provided location (latitude, longitude) and validate proximity (<= 500m)
+    json|error body = req.getJsonPayload();
+    if body is error {
+        return utils:badRequest(caller, "Invalid payload; expected JSON with latitude and longitude");
+    }
+    map<json> bm = <map<json>>body;
+    if !bm.hasKey("latitude") || !bm.hasKey("longitude") {
+        return utils:badRequest(caller, "latitude and longitude are required");
+    }
+    float|error userLat = float:fromString(bm["latitude"].toString());
+    float|error userLon = float:fromString(bm["longitude"].toString());
+    if userLat is error || userLon is error {
+        return utils:badRequest(caller, "Invalid latitude/longitude values");
+    }
+    if event.latitude is () || event.longitude is () {
+        return utils:badRequest(caller, "Event location coordinates not available");
+    }
+    float distance = utils:calculateHaversineDistanceMeters(<float>event.latitude, <float>event.longitude, <float>userLat, <float>userLon);
+    if distance > 500.0 {
+        return utils:forbidden(caller, "You must be within 500 meters of the event location to participate");
     }
 
     // Build UTC datetimes from event date and times (expects YYYY-MM-DD and HH:MM)
@@ -716,6 +740,8 @@ public function getUserAppliedEvents(http:Caller caller, http:Request req) retur
                     "startTime": evt.startTime,
                     "endTime": evt.endTime,
                     "city": evt.city,
+                    "latitude": evt.latitude,
+                    "longitude": evt.longitude,
                     "status": evt.status,
                     "reward": evt.reward,
                     "image_url": evt.image_url
@@ -793,6 +819,8 @@ public function getUserEventParticipation(http:Caller caller, http:Request req, 
             "startTime": event.startTime,
             "location": event.location,
             "city": event.city,
+            "latitude": event.latitude,
+            "longitude": event.longitude,
             "status": event.status,
             "reward": event.reward
         };

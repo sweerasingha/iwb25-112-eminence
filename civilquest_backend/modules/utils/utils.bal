@@ -124,3 +124,54 @@ public isolated function notFound(http:Caller caller, string msg = "Resource not
 
 public isolated function serverError(http:Caller caller, string msg = "Server error") returns error? => sendError(caller, msg, 502);
 
+// Internal helpers for trigonometric and sqrt approximations (sufficient for ~500m checks)
+isolated function toRadians(float deg) returns float => deg * 3.14159265358979323846 / 180.0;
+
+// Cosine approximation using Taylor series up to x^10 term
+isolated function cosApprox(float x) returns float {
+    float x2 = x * x;
+    float term = 1.0;
+    float sum = 1.0;
+    // k from 1..5 computes terms for 2,4,6,8,10
+    int k = 1;
+    while k <= 5 {
+        float denom = (2.0 * k - 1.0) * (2.0 * k);
+        term = term * x2 / denom;
+        // alternate signs: -, +, -, +, -
+        if (k % 2 == 1) {
+            sum -= term;
+        } else {
+            sum += term;
+        }
+        k += 1;
+    }
+    return sum;
+}
+
+// Square root approximation via Newton-Raphson
+isolated function sqrtApprox(float v) returns float {
+    if v <= 0.0 {
+        return 0.0;
+    }
+    float x = v > 1.0 ? v / 2.0 : 1.0;
+    int i = 0;
+    while i < 8 {
+        x = 0.5 * (x + v / x);
+        i += 1;
+    }
+    return x;
+}
+
+// Calculate approximate great-circle distance between two coordinates in meters using equirectangular approximation
+public isolated function calculateHaversineDistanceMeters(float lat1, float lon1, float lat2, float lon2) returns float {
+    float φ1 = toRadians(lat1);
+    float φ2 = toRadians(lat2);
+    float Δφ = toRadians(lat2 - lat1);
+    float Δλ = toRadians(lon2 - lon1);
+    float φm = (φ1 + φ2) / 2.0;
+    float x = Δλ * cosApprox(φm);
+    float y = Δφ;
+    float R = 6371000.0; // meters
+    return R * sqrtApprox(x * x + y * y);
+}
+
