@@ -16,6 +16,10 @@ export default function AuditPage() {
     handleGetAuditCount();
   }, []);
 
+  useEffect(() => {
+    handleGetAuditLogs();
+  }, [pagination.limit, pagination.skip]);
+
   const handleGetAuditLogs = async () => {
     await getAuditLogs(pagination);
   };
@@ -139,7 +143,7 @@ export default function AuditPage() {
           <div className="overflow-x-auto">
             <table className="w-full border-collapse border border-gray-300">
               <thead>
-                <tr className="bg-gray-50">
+        <tr className="bg-gray-50">
                   <th className="border border-gray-300 px-4 py-2 text-left">
                     Timestamp
                   </th>
@@ -147,16 +151,13 @@ export default function AuditPage() {
                     Action
                   </th>
                   <th className="border border-gray-300 px-4 py-2 text-left">
-                    User
+          Actor
                   </th>
                   <th className="border border-gray-300 px-4 py-2 text-left">
-                    Resource
+          Target
                   </th>
                   <th className="border border-gray-300 px-4 py-2 text-left">
-                    Status
-                  </th>
-                  <th className="border border-gray-300 px-4 py-2 text-left">
-                    Details
+          Details & Changes
                   </th>
                 </tr>
               </thead>
@@ -191,48 +192,24 @@ export default function AuditPage() {
                       <div className="flex items-center">
                         <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center mr-2">
                           <span className="text-gray-600 text-xs font-semibold">
-                            {log.userEmail?.charAt(0)?.toUpperCase() ||
-                              log.userId?.charAt(0)?.toUpperCase() ||
-                              "U"}
+                            {log.userId?.charAt(0)?.toUpperCase() || "U"}
                           </span>
                         </div>
                         <div className="text-sm">
                           <div className="font-medium">
-                            {log.userEmail || log.userId || "System"}
+                            {log.userId || "System"}
                           </div>
-                          <div className="text-gray-500">
-                            {log.userRole || ""}
-                          </div>
+                          <div className="text-gray-500">{log.userRole || ""}</div>
                         </div>
                       </div>
                     </td>
                     <td className="border border-gray-300 px-4 py-2">
                       <span className="text-sm font-medium">
-                        {log.resource || log.entityType || "N/A"}
+                        {log.resourceType || "N/A"}
                       </span>
-                      {log.entityId && (
-                        <div className="text-xs text-gray-500">
-                          ID: {log.entityId}
-                        </div>
+                      {log.resourceId && (
+                        <div className="text-xs text-gray-500">ID: {log.resourceId}</div>
                       )}
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          log.status === "SUCCESS" || log.success
-                            ? "bg-green-100 text-green-800"
-                            : log.status === "FAILED" || log.error
-                              ? "bg-red-100 text-red-800"
-                              : "bg-yellow-100 text-yellow-800"
-                        }`}
-                      >
-                        {log.status ||
-                          (log.success
-                            ? "Success"
-                            : log.error
-                              ? "Failed"
-                              : "Unknown")}
-                      </span>
                     </td>
                     <td className="border border-gray-300 px-4 py-2">
                       <details className="cursor-pointer">
@@ -256,20 +233,24 @@ export default function AuditPage() {
                                 <strong>Description:</strong> {log.description}
                               </div>
                             )}
-                            {log.changes && (
-                              <div>
-                                <strong>Changes:</strong>
-                                <pre className="mt-1 text-xs">
-                                  {JSON.stringify(log.changes, null, 2)}
-                                </pre>
-                              </div>
-                            )}
-                            {log.metadata && (
-                              <div>
-                                <strong>Metadata:</strong>
-                                <pre className="mt-1 text-xs">
-                                  {JSON.stringify(log.metadata, null, 2)}
-                                </pre>
+                            {(log.oldData || log.newData) && (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                {log.oldData && (
+                                  <div>
+                                    <strong>Old Data:</strong>
+                                    <pre className="mt-1 text-xs whitespace-pre-wrap break-words">
+                                      {JSON.stringify(log.oldData, null, 2)}
+                                    </pre>
+                                  </div>
+                                )}
+                                {log.newData && (
+                                  <div>
+                                    <strong>New Data:</strong>
+                                    <pre className="mt-1 text-xs whitespace-pre-wrap break-words">
+                                      {JSON.stringify(log.newData, null, 2)}
+                                    </pre>
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>

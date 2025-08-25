@@ -13,3 +13,10 @@ civilquest_dashboard/node_modules/
 civilquest_dashboard/dist/
 civilquest_dashboard/.env
 civilquest_dashboard/.next/
+
+# --------------------
+# Civil Quest Mobile App
+# --------------------
+civilquest_mobileapp/node_modules/
+civilquest_mobileapp/.env
+civilquest_mobileapp/.expo/
