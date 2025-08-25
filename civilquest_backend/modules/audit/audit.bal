@@ -1,22 +1,28 @@
 import civilquest_api.database;
 
+import ballerina/lang.value as value;
 import ballerina/time;
 import ballerina/uuid;
 import ballerinax/mongodb;
 
+type BsonDoc record {|
+    anydata...;
+|};
+
 public type AuditLog record {|
-    string _id;
+    string? _id?;
     string userId;
     string userRole;
     string action;
     string resourceType;
-    string? resourceId;
-    json? oldData;
-    json? newData;
+    string? resourceId?;
+    json? oldData?;
+    json? newData?;
     string timestamp;
-    string? ipAddress;
-    string? userAgent;
-    string? description;
+    string? ipAddress?;
+    string? userAgent?;
+    string? description?;
+    json...;
 |};
 
 final mongodb:Collection auditCollection;
@@ -357,7 +363,6 @@ public function getAuditLogs(
         int limitCount = 100,
         int skipCount = 0
 ) returns AuditLog[]|error {
-
     map<json> filter = {};
 
     if userId is string {
@@ -391,7 +396,7 @@ public function getAuditLogs(
         sort: {"timestamp": -1} // Most recent first
     };
 
-    stream<AuditLog, error?>|error auditStream = auditCollection->find(filter, findOptions);
+    stream<BsonDoc, error?>|error auditStream = auditCollection->find(filter, findOptions);
     if auditStream is error {
         return auditStream;
     }
@@ -400,14 +405,59 @@ public function getAuditLogs(
     int count = 0;
     int skipped = 0;
 
-    check auditStream.forEach(function(AuditLog audit) {
+    error? foreachErr = auditStream.forEach(function(BsonDoc doc) {
+        if doc.hasKey("_id") {
+            anydata v = doc["_id"];
+            if v is map<json> {
+                json? maybeOid = v["$oid"];
+                if maybeOid is string {
+                    doc["_id"] = maybeOid;
+                } else {
+                    string|error sid = value:toString(v);
+                    doc["_id"] = sid is string ? sid : ();
+                }
+            } else if !(v is string) {
+                string|error sid = value:toString(v);
+                doc["_id"] = sid is string ? sid : ();
+            }
+        }
+
+        if doc.hasKey("timestamp") {
+            anydata ts = doc["timestamp"];
+            if ts is map<json> {
+                json? dateVal = ts["$date"];
+                if dateVal is string {
+                    doc["timestamp"] = dateVal;
+                } else if dateVal is int|float|decimal {
+                    doc["timestamp"] = value:toString(dateVal);
+                }
+            } else if !(ts is string) {
+                string|error s = value:toString(ts);
+                if s is string {
+                    doc["timestamp"] = s;
+                }
+            }
+        }
+
+        AuditLog|error decoded = value:fromJsonWithType(<json>doc, AuditLog);
+        if decoded is error {
+            return;
+        }
+
         if skipped < skipCount {
             skipped += 1;
-        } else if count < limitCount {
-            auditLogs.push(audit);
+            return;
+        }
+
+        if count < limitCount {
+            auditLogs.push(decoded);
             count += 1;
         }
     });
+
+    if foreachErr is error {
+        return foreachErr;
+    }
 
     return auditLogs;
 }
