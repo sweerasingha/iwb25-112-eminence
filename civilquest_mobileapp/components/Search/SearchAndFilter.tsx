@@ -130,27 +130,17 @@ export const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
   return (
     <View style={styles.container}>
       {/* Search Bar */}
-      <View style={styles.searchContainer}>
+      <View style={{ width: "100%" }}>
         <InputField
-          placeholder="Search events, locations..."
+          placeholder="Search events..."
+          variant="filled"
+          leftIcon="search"
           value={searchValue}
           onChangeText={onSearchChange}
-          leftIcon="search"
-          variant="filled"
-          rightIcon={
-            searchValue.length > 0 ? (
-              <TouchableOpacity
-                onPress={() => onSearchChange("")}
-                style={styles.clearSearchButton}
-              >
-                <Ionicons
-                  name="close-circle"
-                  size={20}
-                  color={COLORS.textTertiary}
-                />
-              </TouchableOpacity>
-            ) : undefined
-          }
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          style={{ width: "100%" }}
+          size="medium"
         />
       </View>
 
@@ -213,20 +203,20 @@ export const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
             />
           </TouchableOpacity>
         </View>
-
-        {hasActiveFilters && (
-          <TouchableOpacity
-            style={styles.clearButton}
-            onPress={onClearFilters}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="refresh" size={16} color={COLORS.white} />
-            <Text style={styles.clearButtonText}>
-              Clear ({activeFiltersCount})
-            </Text>
-          </TouchableOpacity>
-        )}
       </View>
+
+      {hasActiveFilters && (
+        <TouchableOpacity
+          style={styles.clearButton}
+          onPress={onClearFilters}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="refresh" size={16} color={COLORS.white} />
+          <Text style={styles.clearButtonText}>
+            Clear All Filters ({activeFiltersCount})
+          </Text>
+        </TouchableOpacity>
+      )}
 
       {/* Filter Modals */}
       <FilterModal
@@ -261,6 +251,7 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
+    width: "100%",
     backgroundColor: COLORS.surface,
     borderRadius: LAYOUT.borderRadius.xl,
     paddingHorizontal: SPACING.lg,
@@ -326,6 +317,7 @@ const styles = StyleSheet.create({
   clearButton: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.lg,
     borderRadius: LAYOUT.borderRadius.lg,

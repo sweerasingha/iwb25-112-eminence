@@ -1,3 +1,4 @@
+import { mainCities } from "utils/cities";
 import { useAppSelector, useAppDispatch } from "../store";
 import {
   fetchEvents,
@@ -186,7 +187,7 @@ export const useEvents = () => {
     currentEvent: events.currentEvent.data,
     filters: events.filters,
     eventTypes: getEventTypes(),
-    cities: getCities(),
+    cities: mainCities,
 
     // Loading states
     isLoadingEvents: events.events.loading === "loading",

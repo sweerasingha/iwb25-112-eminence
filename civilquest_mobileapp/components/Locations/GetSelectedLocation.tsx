@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
 
   dropdown: {
     position: "absolute",
-    top: 60,
+    top: 70,
     left: 5,
     right: 5,
     maxHeight: 200,
