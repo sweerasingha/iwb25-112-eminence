@@ -1,10 +1,13 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, Text, StyleSheet, Image, ScrollView } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { ParticipationButtons, Button } from "../../components";
-import { globalStyles, COLORS, SPACING, LAYOUT } from "../../theme";
+import { ParticipationButtons, Button, Loading } from "../../components";
+import { globalStyles, COLORS, SPACING, LAYOUT, FONTS } from "../../theme";
+import { Event } from "types";
+import { useManageEvents } from "hooks/useManageEvents";
+import { useLocation } from "hooks/useLocation";
 
 export default function EventDetailsScreen() {
   const params = useLocalSearchParams();
@@ -13,6 +16,9 @@ export default function EventDetailsScreen() {
     : params.event;
   const event = eventParam ? JSON.parse(eventParam as string) : null;
   const router = useRouter();
+  const { handleParticipateInEvent } = useManageEvents();
+  const { location, getCurrentLocation, errorMsg, isLoading } = useLocation();
+  const [processing, setProcessing] = useState(false);
 
   if (!event) {
     return (
@@ -24,6 +30,29 @@ export default function EventDetailsScreen() {
       </View>
     );
   }
+  const isEventHappening = (event: Event) => {
+    const now = new Date();
+
+    const eventStart = new Date(`${event.date}T${event.startTime}:00`);
+    const eventEnd = new Date(`${event.date}T${event.endTime}:00`);
+
+    // Check if current time is between start and end
+    return now >= eventStart && now <= eventEnd;
+  };
+
+  const participateEvent = async () => {
+    setProcessing(true);
+    await getCurrentLocation();
+    if (errorMsg == null) {
+      console.log("location", location);
+      handleParticipateInEvent({
+        eventId: event.id,
+        latitude: location?.coords.latitude || 0,
+        longitude: location?.coords.longitude || 0,
+      });
+    }
+    setProcessing(false);
+  };
 
   const statusConfig = getStatusConfig(event.status);
 
@@ -173,25 +202,52 @@ export default function EventDetailsScreen() {
         </View>
 
         {/* Actions */}
-        <View style={[globalStyles.card, styles.section]}>
-          <Text style={[globalStyles.h5, styles.sectionTitle]}>
-            Participate
-          </Text>
-          <ParticipationButtons
-            eventId={event.id}
-            initialMethod={event.userApplicationStatus?.method || null}
-          />
-          <Button
-            title="Sponsor this Event"
-            variant="secondary"
-            fullWidth
-            onPress={() => router.push(`/events/sponsor?eventId=${event.id}`)}
-            style={{ marginTop: SPACING.md }}
-            leftIcon={
-              <Ionicons name="diamond" size={18} color={COLORS.background} />
-            }
-          />
-        </View>
+        {event.status === "APPROVED" &&
+          (!isEventHappening(event) ? (
+            <View style={[globalStyles.card, styles.section]}>
+              <Text style={[globalStyles.h5, styles.sectionTitle]}>
+                Participate
+              </Text>
+              <ParticipationButtons
+                eventId={event.id}
+                initialMethod={event.userApplicationStatus?.method || null}
+              />
+              <Button
+                title="Sponsor this Event"
+                variant="secondary"
+                fullWidth
+                onPress={() =>
+                  router.push(`/events/sponsor?eventId=${event.id}`)
+                }
+                style={{ marginTop: SPACING.md }}
+                leftIcon={
+                  <Ionicons
+                    name="diamond"
+                    size={18}
+                    color={COLORS.background}
+                  />
+                }
+              />
+            </View>
+          ) : (
+            <View style={[globalStyles.card, styles.section]}>
+              <Text style={styles.eventHappening}>Event is Ongoing</Text>
+              <Button
+                title={
+                  processing ? "Processing..." : "Participate in this Event"
+                }
+                variant="secondary"
+                fullWidth
+                disabled={processing}
+                onPress={participateEvent}
+                style={{
+                  marginTop: SPACING.md,
+                  backgroundColor: COLORS.success,
+                  borderColor: COLORS.success,
+                }}
+              />
+            </View>
+          ))}
 
         {/* Footer info */}
         <View style={[globalStyles.card, styles.section, styles.footerInfo]}>
@@ -361,5 +417,12 @@ const styles = StyleSheet.create({
   },
   footerInfo: {
     backgroundColor: COLORS.surface,
+  },
+  eventHappening: {
+    textAlign: "center",
+    color: COLORS.success,
+    fontSize: FONTS.sizes.lg,
+    fontWeight: "700",
+    padding: SPACING.md,
   },
 });

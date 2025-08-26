@@ -340,9 +340,16 @@ class EventService {
     }
   }
 
-  async participateInEvent(eventId: ID): Promise<ApiResponse<null>> {
+  async participateInEvent(data: {
+    eventId: ID;
+    latitude: number;
+    longitude: number;
+  }): Promise<ApiResponse<null>> {
     try {
-      const response = await api.post(`/events/${eventId}/participate`, {});
+      const response = await api.post(`/events/${data.eventId}/participate`, {
+        latitude: data.latitude,
+        longitude: data.longitude,
+      });
       return {
         success: true,
         message: "Successfully participated in event",

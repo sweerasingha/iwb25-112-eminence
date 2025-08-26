@@ -1,11 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  RefreshControl,
-  Animated,
-} from "react-native";
+import { View, Text, StyleSheet, RefreshControl, Animated } from "react-native";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -80,6 +74,7 @@ export default function HomeScreen() {
       variant="featured"
     />
   );
+  
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
@@ -136,8 +131,6 @@ export default function HomeScreen() {
     );
   };
 
-  
-
   const headerOpacity = scrollY.interpolate({
     inputRange: [0, 100],
     outputRange: [1, 0.8],
@@ -192,7 +185,6 @@ export default function HomeScreen() {
             onClearFilters={handleClearFilters}
           />
         </View>
-
 
         {/* All Events Section */}
         <View style={styles.section}>

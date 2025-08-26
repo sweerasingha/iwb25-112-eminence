@@ -68,6 +68,7 @@ export const EventCard: React.FC<EventCardProps> = ({
     }
   };
 
+
   const statusConfig = getStatusConfig(event.status);
 
   const renderCompactCard = () => (

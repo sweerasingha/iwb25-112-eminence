@@ -5,7 +5,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { RootState, AppDispatch } from "../store";
 import { fetchMyEvents } from "../store/slices/eventsSlice";
 import { eventService } from "../services/event";
-import { Event } from "../types";
+import { Event, ID } from "../types";
 
 export const useManageEvents = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -55,10 +55,13 @@ export const useManageEvents = () => {
     router.push("/events/create");
   };
 
-  const handleParticipateInEvent = async (eventId: string) => {
+  const handleParticipateInEvent = async (data: {
+    eventId: ID;
+    latitude: number;
+    longitude: number;
+  }) => {
     try {
-      setParticipationActions((prev) => ({ ...prev, [eventId]: true }));
-      const response = await eventService.participateInEvent(eventId);
+      const response = await eventService.participateInEvent(data);
 
       if (response.success) {
         Alert.alert("Success", "Successfully participated in event");
@@ -71,8 +74,8 @@ export const useManageEvents = () => {
       }
     } catch (error) {
       Alert.alert("Error", "Failed to participate in event");
+      throw new Error("Failed to participate in event");
     } finally {
-      setParticipationActions((prev) => ({ ...prev, [eventId]: false }));
     }
   };
 
@@ -175,7 +178,7 @@ export const useManageEvents = () => {
         handleEndEvent(event.id);
         break;
       case "participate":
-        handleParticipateInEvent(event.id);
+        //handleParticipateInEvent(event.id);
         break;
       default:
         break;
@@ -277,5 +280,6 @@ export const useManageEvents = () => {
     handleRejectSponsor,
     setEditModalVisible,
     setSponsorsModalVisible,
+    handleParticipateInEvent,
   };
 };
