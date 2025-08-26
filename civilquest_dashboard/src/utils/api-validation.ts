@@ -23,7 +23,16 @@ export const validateApiRequirements = (formData: any) => {
     }
   });
 
-  const generalFields = ["date", "startTime", "endTime", "city", "eventType"];
+  const generalFields = [
+    "date",
+    "startTime",
+    "endTime",
+    "city",
+    "eventType",
+    "province",
+    "latitude",
+    "longitude",
+  ];
 
   generalFields.forEach((field) => {
     const value = formData[field];
@@ -49,6 +58,9 @@ export const createApiCompliantFormData = (
   data.append("endTime", formData.endTime);
   data.append("location", sanitizeForApi(formData.location));
   data.append("city", formData.city);
+  if (formData.province) data.append("province", formData.province);
+  if (formData.latitude) data.append("latitude", formData.latitude);
+  if (formData.longitude) data.append("longitude", formData.longitude);
   data.append("eventTitle", sanitizeForApi(formData.eventTitle));
   data.append("eventType", formData.eventType);
   data.append("eventDescription", sanitizeForApi(formData.eventDescription));

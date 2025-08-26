@@ -2,8 +2,14 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import Cookies from "js-cookie";
 import { STORAGE_KEYS } from "@/config";
+const computedBaseUrl = (() => {
+  const envUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
+  const direct = envUrl && envUrl !== "undefined" ? envUrl : "http://localhost:4444/api";
+  return direct.replace(/\/$/, "");
+})();
+
 const apiService = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL,
+  baseURL: computedBaseUrl,
   headers: {
     "Content-Type": "application/json",
   },
@@ -47,10 +53,6 @@ const getErrorMessage = (err: any): string => {
   }
 };
 
-const simulateNetworkDelay = () => {
-  const delay = 500;
-  return new Promise((resolve) => setTimeout(resolve, delay));
-};
 
 apiService.interceptors.request.use(async (config) => {
   try {
@@ -63,8 +65,6 @@ apiService.interceptors.request.use(async (config) => {
     if (config.data instanceof FormData) {
       delete config.headers["Content-Type"];
     }
-
-    await simulateNetworkDelay();
 
     return config;
   } catch (error) {

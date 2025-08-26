@@ -17,6 +17,7 @@ import { useUserContext } from "@/context/userContext";
 import { Roles } from "@/types";
 import useAnalytics from "@/hooks/useAnalytics";
 import useEvent from "@/hooks/useEvent";
+import type { Event, Roles as TRoles } from "@/types";
 import Loading from "@/components/ui/loading";
 import StatsOverview from "@/components/dashboard/stats-overview";
 import WelcomeCard from "@/components/dashboard/welcome-card";
@@ -57,11 +58,14 @@ export default function Home() {
 
   useEffect(() => {
     // Fetch initial data
-    getEventAnalytics({ startDate: "2025-01-01", endDate: "2025-12-31" });
-    getUserAnalytics();
-    getSponsorshipAnalytics({ startDate: "2025-01-01", endDate: "2025-12-31" });
+    const canSeeAnalytics = user?.role === Roles.ADMIN || user?.role === Roles.SUPER_ADMIN;
+    if (canSeeAnalytics) {
+      getEventAnalytics({ startDate: "2025-01-01", endDate: "2025-12-31" });
+      getUserAnalytics();
+      getSponsorshipAnalytics({ startDate: "2025-01-01", endDate: "2025-12-31" });
+    }
     fetchEvents();
-  }, []);
+  }, [user?.role]);
 
   const quickActions: QuickAction[] = [
     {
@@ -83,7 +87,7 @@ export default function Home() {
       href: "/analytics",
       icon: <FaChartLine className="w-5 h-5" />,
       color: "bg-purple-500 hover:bg-purple-600",
-      allowedRoles: [Roles.ADMIN, Roles.SUPER_ADMIN, Roles.ADMIN_OPERATOR],
+      allowedRoles: [Roles.ADMIN, Roles.SUPER_ADMIN],
     },
     {
       title: "Points Management",
@@ -133,7 +137,7 @@ export default function Home() {
     },
   ];
 
-  const recentEvents: Event[] = events!.slice(0, 5) || [];
+  const recentEvents: Event[] = (events || []).slice(0, 5) as Event[];
   const hasData =
     eventAnalytics ||
     userAnalytics ||

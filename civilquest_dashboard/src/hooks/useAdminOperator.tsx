@@ -4,14 +4,22 @@ import { ApiResponse, AdminOperator } from "@/types";
 import { toast } from "react-toastify";
 
 const useAdminOperator = () => {
-  const [adminOperators, setAdminOperators] = useState([]);
+  const [adminOperators, setAdminOperators] = useState<AdminOperator[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchAdminOperators = async (): Promise<ApiResponse> => {
     setLoading(true);
     try {
       const response = await adminOperatorService.getAllAdminOperators();
-      setAdminOperators((response as any) ?? []);
+      const list: AdminOperator[] = Array.isArray(response)
+        ? [...response]
+        : [];
+      list.sort((a: any, b: any) => {
+        const aTime = new Date(a?.createdAt || a?.updatedAt || 0).getTime();
+        const bTime = new Date(b?.createdAt || b?.updatedAt || 0).getTime();
+        return bTime - aTime;
+      });
+      setAdminOperators(list);
       return {
         status: true,
       };
@@ -28,11 +36,11 @@ const useAdminOperator = () => {
   const createAdminOperator = async (
     adminOperatorData: AdminOperator
   ): Promise<ApiResponse> => {
-    console.log("Admin operator created:", adminOperatorData);
     try {
       const response =
         await adminOperatorService.createAdminOperator(adminOperatorData);
       toast.success("Admin operator created successfully");
+      await fetchAdminOperators();
       return {
         status: true,
       };
@@ -54,6 +62,7 @@ const useAdminOperator = () => {
     try {
       await adminOperatorService.deleteAdminOperator(adminOperatorId);
       toast.success("Admin operator deleted successfully");
+      await fetchAdminOperators();
       return {
         status: true,
       };
@@ -72,6 +81,7 @@ const useAdminOperator = () => {
     try {
       await adminOperatorService.updateAdminOperator(adminOperatorData);
       toast.success("Admin operator updated successfully");
+      await fetchAdminOperators();
       return {
         status: true,
       };

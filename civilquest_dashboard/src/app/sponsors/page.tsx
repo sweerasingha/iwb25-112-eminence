@@ -8,12 +8,17 @@ import { useEffect, useState } from "react";
 import AlertDialog from "@/components/ui/alertDailog";
 import { DataTable } from "@/components/ui/table";
 import { ColumnDef } from "@tanstack/react-table";
+import { useUserContext } from "@/context/userContext";
+import { Roles } from "@/types";
 
 export default function ManageSponsors() {
   const useSponsorHook = useSponsor();
   const approveDialog = useDialog();
   const rejectDialog = useDialog();
   const [selectedSponsor, setSelectedSponsor] = useState<Sponsor | null>(null);
+  const { user } = useUserContext();
+  const role = user?.role;
+  const canModerate = role === Roles.ADMIN_OPERATOR || role === Roles.PREMIUM_USER || role === Roles.ADMIN;
 
   useEffect(() => {
     useSponsorHook.fetchSponsors();
@@ -58,14 +63,14 @@ export default function ManageSponsors() {
       
     },
 
-    {
+  {
       id: "actions",
       header: "Actions",
       cell: ({ row }) => {
         const sponsor = row.original;
         return (
           <div className="flex gap-2">
-            {sponsor.approvedStatus === "APPROVED" && (
+              {canModerate && sponsor.approvedStatus === "APPROVED" && (
               <>
                 <StaticButton
                   onClick={() => {

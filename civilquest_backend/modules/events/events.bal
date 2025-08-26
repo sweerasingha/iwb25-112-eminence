@@ -94,10 +94,9 @@ function canManageEventInProvince(string adminEmail, string eventCity) returns b
     return isEventCityInProvince(eventCity, province);
 }
 
-// Helper function to check if a city belongs to a province
-function isEventCityInProvince(string city, string province) returns boolean {
-    // This is a simplified mapping. In a real system, this would be more comprehensive
-    map<string[]> provinceCities = {
+// Centralized province-city mapping for reuse
+public function getProvinceCityMapping() returns map<string[]> {
+    return {
         "Western": ["Colombo", "Gampaha", "Kalutara", "Negombo", "Mount Lavinia", "Moratuwa", "Dehiwala"],
         "Central": ["Kandy", "Matale", "Nuwara Eliya", "Dambulla", "Gampola"],
         "Southern": ["Galle", "Matara", "Hambantota", "Tangalle", "Hikkaduwa"],
@@ -108,12 +107,15 @@ function isEventCityInProvince(string city, string province) returns boolean {
         "Uva": ["Badulla", "Monaragala", "Bandarawela"],
         "Sabaragamuwa": ["Ratnapura", "Kegalle", "Balangoda"]
     };
+}
 
+// Helper function to check if a city belongs to a province
+function isEventCityInProvince(string city, string province) returns boolean {
+    map<string[]> provinceCities = getProvinceCityMapping();
     string[]? cities = provinceCities[province];
     if cities is () {
         return false;
     }
-
     foreach string validCity in cities {
         if normalize(city) == normalize(validCity) {
             return true;
@@ -132,6 +134,7 @@ public type Event record {|
     string? endTime;
     string location;
     string city;
+    string? province;
     float? latitude;
     float? longitude;
     string eventTitle;
@@ -146,6 +149,10 @@ public type Event record {|
     string image_url;
 |};
 
+public type RawDoc record {|
+    json...;
+|};
+
 final mongodb:Collection eventCollection;
 final mongodb:Collection userCollection;
 final mongodb:Collection participantCollection;
@@ -156,6 +163,83 @@ function init() returns error? {
     userCollection = check database:db->getCollection("users");
     participantCollection = check database:db->getCollection("participants");
     sponsorCollection = check database:db->getCollection("sponsors");
+}
+
+// Helper to allow adding new fields
+function toPlainJsonMap(json j) returns map<json> {
+    map<json> out = {};
+    if j is map<json> {
+        foreach var [k, v] in j.entries() {
+            out[k] = v;
+        }
+    }
+    return out;
+}
+
+// Get approved sponsors for a given event
+function getApprovedSponsorsJson(string eventId) returns json[] {
+    json[] sponsorsDetailed = [];
+    stream<record {|
+        string _id;
+        string id?;
+        string userId;
+        string eventId;
+        string sponsorType;
+        float? amount;
+        float? donationAmount;
+        string? donation;
+        string description;
+        string approvedStatus;
+        string createdAt;
+        string updatedAt;
+    |}, error?>|error sponsorStream = sponsorCollection->find({"eventId": eventId, "approvedStatus": "APPROVED"});
+    if sponsorStream is stream<record {|
+        string _id;
+        string id?;
+        string userId;
+        string eventId;
+        string sponsorType;
+        float? amount;
+        float? donationAmount;
+        string? donation;
+        string description;
+        string approvedStatus;
+        string createdAt;
+        string updatedAt;
+    |}, error?> {
+        error? forEachResult = sponsorStream.forEach(function(record {|
+                    string _id;
+                    string id?;
+                    string userId;
+                    string eventId;
+                    string sponsorType;
+                    float? amount;
+                    float? donationAmount;
+                    string? donation;
+                    string description;
+                    string approvedStatus;
+                    string createdAt;
+                    string updatedAt;
+                |} s) {
+            sponsorsDetailed.push({
+                _id: s._id,
+                id: s.id,
+                userId: s.userId,
+                sponsorType: s.sponsorType,
+                amount: s.amount,
+                donationAmount: s.donationAmount,
+                donation: s.donation,
+                description: s.description,
+                approvedStatus: s.approvedStatus,
+                createdAt: s.createdAt,
+                updatedAt: s.updatedAt
+            });
+        });
+        if forEachResult is error {
+            // ignore errors and return what we have
+        }
+    }
+    return sponsorsDetailed;
 }
 
 public function createEvent(http:Caller caller, http:Request req) returns error? {
@@ -239,6 +323,15 @@ public function createEvent(http:Caller caller, http:Request req) returns error?
         return;
     }
 
+    // Province/city presence and consistency
+    if !m.hasKey("province") {
+        return utils:badRequest(caller, "province is required");
+    }
+    string province = <string>m["province"];
+    if !isEventCityInProvince(<string>m["city"], province) {
+        return utils:badRequest(caller, "City does not belong to the selected province");
+    }
+
     // Image is optional: upload only if provided
     string imageUrl = "";
     if img.length() > 0 {
@@ -271,6 +364,7 @@ public function createEvent(http:Caller caller, http:Request req) returns error?
         endTime: (),
         location: <string>m["location"],
         city: <string>m["city"],
+        province: province,
         latitude: (),
         longitude: (),
         eventTitle: <string>m["eventTitle"],
@@ -287,6 +381,10 @@ public function createEvent(http:Caller caller, http:Request req) returns error?
 
     if m.hasKey("endTime") {
         evt.endTime = <string>m["endTime"];
+    }
+    // Require latitude and longitude
+    if !m.hasKey("latitude") || !m.hasKey("longitude") {
+        return utils:badRequest(caller, "latitude and longitude are required");
     }
     if m.hasKey("latitude") {
         float|error lat = float:fromString(m["latitude"].toString());
@@ -382,28 +480,64 @@ public function approveEvent(http:Caller caller, http:Request req, string eventI
         return utils:unauthorized(caller, "Invalid token");
     }
 
-    // Get event details first to check location-based permissions
-    Event|error|() event = eventCollection->findOne({"_id": eventId});
-    if event is error {
-        return utils:serverError(caller);
+    record {|anydata...;|}|error|() edoc = eventCollection->findOne({"_id": eventId});
+    if edoc is error {
+        return utils:serverError(caller, edoc.message());
     }
-    if event is () {
+    if edoc is () {
         return utils:notFound(caller, "Event not found");
     }
-
-    // Role-aware permission checks
-    boolean allowed = false;
-    // operatorRole is guaranteed string (error already handled)
-    if operatorRole == "SUPER_ADMIN" {
-        allowed = true; // Full access
-    } else if operatorRole == "ADMIN_OPERATOR" {
-        allowed = canManageEventInCity(<string>operatorEmail, event.city);
-    } else if operatorRole == "ADMIN" {
-        allowed = canManageEventInProvince(<string>operatorEmail, event.city);
+    record {|anydata...;|} ev = <record {|anydata...;|}>edoc;
+    string eventCity = "";
+    string createdBy = "";
+    string eventTitle = "";
+    anydata|() c1 = ev["city"];
+    if c1 is string {
+        eventCity = c1;
+    }
+    anydata|() cb = ev["createdBy"];
+    if cb is string {
+        createdBy = cb;
+    }
+    anydata|() et = ev["eventTitle"];
+    if et is string {
+        eventTitle = et;
+    }
+    if eventCity == "" {
+        return utils:badRequest(caller, "Event is missing a valid city");
     }
 
-    if !allowed {
-        return utils:forbidden(caller);
+    boolean cityKnown = false;
+    {
+        map<string[]> mapping = getProvinceCityMapping();
+        foreach var [_, cities] in mapping.entries() {
+            foreach string c in cities {
+                if normalize(c) == normalize(eventCity) {
+                    cityKnown = true;
+                    break;
+                }
+            }
+            if cityKnown {
+                break;
+            }
+        }
+    }
+    if !cityKnown {
+        return utils:badRequest(caller, "Invalid event city: " + eventCity);
+    }
+
+    if operatorRole == "SUPER_ADMIN" {
+        // Full access
+    } else if operatorRole == "ADMIN_OPERATOR" {
+        if !canManageEventInCity(<string>operatorEmail, eventCity) {
+            return utils:forbidden(caller, "You can only approve events in your city");
+        }
+    } else if operatorRole == "ADMIN" {
+        if !canManageEventInProvince(<string>operatorEmail, eventCity) {
+            return utils:forbidden(caller, "You can only approve events in your province");
+        }
+    } else {
+        return utils:forbidden(caller, "Your role cannot approve events");
     }
 
     string now = time:utcToString(time:utcNow());
@@ -417,35 +551,33 @@ public function approveEvent(http:Caller caller, http:Request req, string eventI
         return utils:notFound(caller, "Event not found");
     }
 
-    // Log audit trail and notify
-    // Audit log (non-blocking)
-    error? auditResult = audit:logEventApproval(<string>operatorEmail, eventId, approve);
-    if auditResult is error {
-        // Continue without failing; audit failure shouldn't break operation
-    }
-    error? notifyResult = notifications:notifyEventApproval(event.createdBy, event.eventTitle, approve);
-    if notifyResult is error {
-        // Log error but don't fail the operation
-    }
+    check caller->respond(<http:Ok>{body: {status}});
 
-    // Award approval bonus points when event is approved
-    if approve {
-        points:PointsConfig|error config = points:getCurrentPointsConfig();
-        if config is points:PointsConfig {
-            error? approvalPointsResult = points:awardPoints(
-                    event.createdBy,
+    error? auditRes = audit:logEventApproval(<string>operatorEmail, eventId, approve);
+    if auditRes is error {
+        // ignore
+    }
+    if createdBy != "" && eventTitle != "" {
+        error? notifyRes = notifications:notifyEventApproval(createdBy, eventTitle, approve);
+        if notifyRes is error {
+            // ignore
+        }
+    }
+    if approve && createdBy != "" {
+        points:PointsConfig|error cfg = points:getCurrentPointsConfig();
+        if cfg is points:PointsConfig {
+            error? pointsRes = points:awardPoints(
+                    createdBy,
                     points:BONUS_AWARD,
-                    config.eventApprovalBonusPoints,
-                    "Event approval bonus: " + event.eventTitle,
+                    cfg.eventApprovalBonusPoints,
+                    "Event approval bonus: " + eventTitle,
                     eventId = eventId
             );
-            if approvalPointsResult is error {
-                // Log but don't fail the operation
+            if pointsRes is error {
+                // ignore
             }
         }
     }
-
-    check caller->respond(<http:Ok>{body: {status}});
 }
 
 public function endEvent(http:Caller caller, http:Request req, string eventId) returns error? {
@@ -463,8 +595,8 @@ public function endEvent(http:Caller caller, http:Request req, string eventId) r
         return utils:unauthorized(caller, "Invalid token");
     }
 
-    // Check permissions: Admin Operators can end any event, Premium Users can end their own events, Admins can end any event
-    if role != "ADMIN_OPERATOR" && role != "PREMIUM_USER" && role != "ADMIN" {
+    // Check acceptable roles up-front
+    if role != "ADMIN_OPERATOR" && role != "PREMIUM_USER" && role != "ADMIN" && role != "SUPER_ADMIN" {
         return utils:forbidden(caller);
     }
 
@@ -477,10 +609,17 @@ public function endEvent(http:Caller caller, http:Request req, string eventId) r
         return utils:notFound(caller, "Event not found");
     }
 
-    // If Premium User, check if they created the event
     if role == "PREMIUM_USER" {
         if event.createdBy != userId {
             return utils:forbidden(caller, "Can only end events you created");
+        }
+    } else if role == "ADMIN_OPERATOR" {
+        if !canManageEventInCity(<string>userId, event.city) {
+            return utils:forbidden(caller, "You can only end events in your city");
+        }
+    } else if role == "ADMIN" {
+        if !canManageEventInProvince(<string>userId, event.city) {
+            return utils:forbidden(caller, "You can only end events in your province");
         }
     }
 
@@ -493,47 +632,40 @@ public function endEvent(http:Caller caller, http:Request req, string eventId) r
         return utils:notFound(caller, "Event not found");
     }
 
-    // Award completion bonus points to event creator and participants
-    points:PointsConfig|error config = points:getCurrentPointsConfig();
-    if config is points:PointsConfig {
-        // Award completion bonus to event creator
-        error? creatorBonusResult = points:awardPoints(
+    check caller->respond(<http:Ok>{body: {status: "ENDED"}});
+
+    points:PointsConfig|error _cfg = points:getCurrentPointsConfig();
+    if _cfg is points:PointsConfig {
+        error? _creator = points:awardPoints(
                 event.createdBy,
                 points:EVENT_COMPLETION,
-                config.eventCompletionBonusPoints,
+                _cfg.eventCompletionBonusPoints,
                 "Event completion bonus: " + event.eventTitle,
                 eventId = eventId
         );
-        if creatorBonusResult is error {
-            // Log but don't fail the operation
+        if _creator is error {
+            // ignore
         }
-
-        // Award completion bonus to all participants who actually participated
+        // Award to participants
         if event.participant.length() > 0 {
             foreach string participantEmail in event.participant {
-                error? participantBonusResult = points:awardPoints(
+                error? _p = points:awardPoints(
                         participantEmail,
                         points:EVENT_COMPLETION,
-                        config.eventCompletionBonusPoints / 2, // Half bonus for participants
+                        _cfg.eventCompletionBonusPoints / 2,
                         "Event completion participation bonus: " + event.eventTitle,
                         eventId = eventId
                 );
-                // Intentionally not checking participantBonusResult - points are optional
-                if participantBonusResult is error {
-                    // Log but don't fail the operation
+                if _p is error {
+                    // ignore
                 }
             }
         }
-        // Intentionally not checking creatorBonusResult - points are optional
     }
-
-    // Send completion notification to event creator
-    error? notifyResult = notifications:notifyEventCompleted(event.createdBy, event.eventTitle);
-    if notifyResult is error {
-        // Log error but don't fail the operation
+    error? _n = notifications:notifyEventCompleted(event.createdBy, event.eventTitle);
+    if _n is error {
+        // ignore
     }
-
-    check caller->respond(<http:Ok>{body: {status: "ENDED"}});
 }
 
 // Get all events with optional filtering
@@ -581,129 +713,104 @@ public function getEvents(http:Caller caller, http:Request req) returns error? {
         }
     }
 
-    stream<Event, error?>|error events = eventCollection->find(filter);
+    // Pagination and sorting
+    int page = 1;
+    int perPage = 20;
+    string sortBy = "createdAt";
+    int sortDir = -1; // -1 desc, 1 asc
+
+    if queryParams.hasKey("page") {
+        string[]? pArr = queryParams["page"];
+        if pArr is string[] && pArr.length() > 0 {
+            int|error p = int:fromString(pArr[0]);
+            if p is int && p > 0 {
+                page = p;
+            }
+        }
+    }
+    if queryParams.hasKey("limit") {
+        string[]? lArr = queryParams["limit"];
+        if lArr is string[] && lArr.length() > 0 {
+            int|error l = int:fromString(lArr[0]);
+            if l is int {
+                if l < 1 {
+                    perPage = 1;
+                } else if l > 100 {
+                    perPage = 100;
+                } else {
+                    perPage = l;
+                }
+            }
+        }
+    }
+    if queryParams.hasKey("sortBy") {
+        string[]? sbArr = queryParams["sortBy"];
+        if sbArr is string[] && sbArr.length() > 0 {
+            string sb = sbArr[0];
+            // Allow-listed sort fields
+            if sb == "createdAt" || sb == "updatedAt" || sb == "date" || sb == "city" || sb == "eventTitle" || sb == "status" {
+                sortBy = sb;
+            }
+        }
+    }
+    if queryParams.hasKey("sortOrder") {
+        string[]? soArr = queryParams["sortOrder"];
+        if soArr is string[] && soArr.length() > 0 {
+            string so = soArr[0].toLowerAscii();
+            if so == "asc" {
+                sortDir = 1;
+            } else if so == "desc" {
+                sortDir = -1;
+            }
+        }
+    }
+
+    int skip = (page - 1) * perPage;
+    map<json> sortSpec = {};
+    sortSpec[sortBy] = sortDir;
+
+    stream<RawDoc, error?>|error events = eventCollection->find(filter, {"sort": sortSpec, "skip": skip, "limit": perPage});
     if events is error {
         return utils:serverError(caller);
     }
 
     json[] eventList = [];
-    check events.forEach(function(Event event) {
-        // Get actual participant count from participant collection for accuracy
-        int|error participantCount = participantCollection->countDocuments({"eventId": event._id});
-        int actualParticipantCount = participantCount is int ? participantCount : 0;
+    check events.forEach(function(RawDoc rawDoc) {
+        map<json> eventMap = rawDoc;
+        string eid = eventMap.hasKey("_id") && eventMap["_id"] is string ? <string>eventMap["_id"] : eventMap["_id"].toString();
+        if !eventMap.hasKey("id") || !(eventMap["id"] is string) {
+            eventMap["id"] = eid;
+        }
 
-        json eventData = {
-            "_id": event._id,
-            "id": event.id,
-            "createdAt": event.createdAt,
-            "updatedAt": event.updatedAt,
-            "date": event.date,
-            "startTime": event.startTime,
-            "endTime": event.endTime,
-            "location": event.location,
-            "city": event.city,
-            "latitude": event.latitude,
-            "longitude": event.longitude,
-            "eventTitle": event.eventTitle,
-            "eventType": event.eventType,
-            "eventDescription": event.eventDescription,
-            "createdBy": event.createdBy,
-            "approvedBy": event.approvedBy,
-            "status": event.status,
-            "sponsor": event.sponsor,
-            "participant": event.participant,
-            "reward": event.reward,
-            "image_url": event.image_url,
-            "participantCount": actualParticipantCount
-        };
-
-        map<json> eventDataMap = <map<json>>eventData;
+        // Actual participant count
+        int|error participantCount = participantCollection->countDocuments({"eventId": eid});
+        eventMap["participantCount"] = participantCount is int ? participantCount : 0;
 
         // If user is authenticated, check their application status
         if currentUserId is string {
             Participant|error|() userParticipation = participantCollection->findOne({
-                "eventId": event._id,
+                "eventId": eid,
                 "userId": currentUserId
             });
 
             if userParticipation is Participant {
-                eventDataMap["userApplicationStatus"] = {
+                eventMap["userApplicationStatus"] = {
                     "hasApplied": true,
                     "method": userParticipation.method,
                     "isParticipated": userParticipation.isParticipated,
                     "appliedAt": userParticipation.createdAt
                 };
             } else {
-                eventDataMap["userApplicationStatus"] = {"hasApplied": false};
+                eventMap["userApplicationStatus"] = {"hasApplied": false};
             }
         }
 
-        // Attach detailed approved sponsors list
-        json[] sponsorsDetailed = [];
-        stream<record {|
-            string _id;
-            string id?;
-            string userId;
-            string eventId;
-            string sponsorType;
-            float? amount;
-            float? donationAmount;
-            string? donation;
-            string description;
-            string approvedStatus;
-            string createdAt;
-            string updatedAt;
-        |}, error?>|error sponsorStream = sponsorCollection->find({"eventId": event._id, "approvedStatus": "APPROVED"});
-        if sponsorStream is stream<record {|
-            string _id;
-            string id?;
-            string userId;
-            string eventId;
-            string sponsorType;
-            float? amount;
-            float? donationAmount;
-            string? donation;
-            string description;
-            string approvedStatus;
-            string createdAt;
-            string updatedAt;
-        |}, error?> {
-            error? forEachResult = sponsorStream.forEach(function(record {|
-                        string _id;
-                        string id?;
-                        string userId;
-                        string eventId;
-                        string sponsorType;
-                        float? amount;
-                        float? donationAmount;
-                        string? donation;
-                        string description;
-                        string approvedStatus;
-                        string createdAt;
-                        string updatedAt;
-                    |} s) {
-                sponsorsDetailed.push({
-                    _id: s._id,
-                    id: s.id,
-                    userId: s.userId,
-                    sponsorType: s.sponsorType,
-                    amount: s.amount,
-                    donationAmount: s.donationAmount,
-                    donation: s.donation,
-                    description: s.description,
-                    approvedStatus: s.approvedStatus,
-                    createdAt: s.createdAt,
-                    updatedAt: s.updatedAt
-                });
-            });
-            if forEachResult is error {
-                // leave sponsorsDetailed empty on error
-            }
+        json[] sponsorsDetailedList = getApprovedSponsorsJson(eid);
+        if sponsorsDetailedList.length() > 0 {
+            eventMap["sponsors"] = sponsorsDetailedList;
         }
-        eventDataMap["sponsor"] = sponsorsDetailed;
-        eventData = eventDataMap;
 
-        eventList.push(eventData);
+        eventList.push(eventMap);
     });
 
     check caller->respond(<http:Ok>{body: eventList});
@@ -719,93 +826,40 @@ public function getEvent(http:Caller caller, http:Request req, string eventId) r
         return utils:notFound(caller, "Event not found");
     }
 
-    // Fetch approved sponsors for this event (if any) and enrich response.
-    // We deliberately keep the original string[] sponsor field for backward compatibility
-    // and add a new "sponsors" field containing detailed sponsor records.
-    json[] sponsorsDetailed = [];
-    stream<record {|
-        string _id;
-        string id?;
-        string userId;
-        string eventId;
-        string sponsorType;
-        float? amount;
-        float? donationAmount;
-        string? donation;
-        string description;
-        string approvedStatus;
-        string createdAt;
-        string updatedAt;
-    |}, error?>|error sponsorStream = sponsorCollection->find({"eventId": eventId, "approvedStatus": "APPROVED"});
-    if sponsorStream is stream<record {|
-        string _id;
-        string id?;
-        string userId;
-        string eventId;
-        string sponsorType;
-        float? amount;
-        float? donationAmount;
-        string? donation;
-        string description;
-        string approvedStatus;
-        string createdAt;
-        string updatedAt;
-    |}, error?> {
-        check sponsorStream.forEach(function(record {|
-                    string _id;
-                    string id?;
-                    string userId;
-                    string eventId;
-                    string sponsorType;
-                    float? amount;
-                    float? donationAmount;
-                    string? donation;
-                    string description;
-                    string approvedStatus;
-                    string createdAt;
-                    string updatedAt;
-                |} s) {
-            sponsorsDetailed.push({
-                _id: s._id,
-                id: s.id,
-                userId: s.userId,
-                sponsorType: s.sponsorType,
-                amount: s.amount,
-                donationAmount: s.donationAmount,
-                donation: s.donation,
-                description: s.description,
-                approvedStatus: s.approvedStatus,
-                createdAt: s.createdAt,
-                updatedAt: s.updatedAt
+    json[] sponsorsDetailed = getApprovedSponsorsJson(eventId);
+    json eventJson = event;
+    map<json> eventMap = toPlainJsonMap(eventJson);
+    if sponsorsDetailed.length() > 0 {
+        eventMap["sponsors"] = sponsorsDetailed;
+    }
+    // Add participantCount for single event response
+    int|error participantCount = participantCollection->countDocuments({"eventId": eventId});
+    eventMap["participantCount"] = participantCount is int ? participantCount : 0;
+
+    // If user is authenticated, add their participation status
+    string|error? authHeader = req.getHeader("Authorization");
+    if authHeader is string && authHeader.length() > 7 {
+        string tokenStr = authHeader.substring(7);
+        string|error userIdFromToken = token:extractUserId(tokenStr);
+        if userIdFromToken is string {
+            Participant|error|() userParticipation = participantCollection->findOne({
+                "eventId": eventId,
+                "userId": userIdFromToken
             });
-        });
+            if userParticipation is Participant {
+                eventMap["userApplicationStatus"] = {
+                    "hasApplied": true,
+                    "method": userParticipation.method,
+                    "isParticipated": userParticipation.isParticipated,
+                    "appliedAt": userParticipation.createdAt
+                };
+            } else {
+                eventMap["userApplicationStatus"] = {"hasApplied": false};
+            }
+        }
     }
 
-    map<json> eventJson = {
-        _id: event._id,
-        id: event.id,
-        createdAt: event.createdAt,
-        updatedAt: event.updatedAt,
-        date: event.date,
-        startTime: event.startTime,
-        endTime: event.endTime,
-        location: event.location,
-        city: event.city,
-        latitude: event.latitude,
-        longitude: event.longitude,
-        eventTitle: event.eventTitle,
-        eventType: event.eventType,
-        eventDescription: event.eventDescription,
-        createdBy: event.createdBy,
-        approvedBy: event.approvedBy,
-        status: event.status,
-        sponsor: sponsorsDetailed,
-        participant: event.participant,
-        reward: event.reward,
-        image_url: event.image_url
-    };
-
-    check caller->respond(<http:Ok>{body: eventJson});
+    check caller->respond(<http:Ok>{body: eventMap});
 }
 
 // Update event (only by creator or admin operator)
@@ -829,18 +883,59 @@ public function updateEvent(http:Caller caller, http:Request req, string eventId
         return utils:unauthorized(caller, "Invalid token");
     }
 
-    // Check if event exists and get creator info
-    Event|error|() event = eventCollection->findOne({"_id": eventId});
-    if event is error {
+    // Check if event exists and get creator/city info (permissive mapping to avoid conversion errors)
+    record {|anydata...;|}|error|() edoc = eventCollection->findOne({"_id": eventId});
+    if edoc is error {
         return utils:serverError(caller);
     }
-    if event is () {
+    if edoc is () {
         return utils:notFound(caller, "Event not found");
     }
+    record {|anydata...;|} ev = <record {|anydata...;|}>edoc;
+    string evCity = "";
+    string evProvince = "";
+    string evCreatedBy = "";
+    string evStartTime = "";
+    string evStatus = "";
+    anydata|() c1 = ev["city"];
+    if c1 is string {
+        evCity = c1;
+    }
+    anydata|() p1 = ev["province"];
+    if p1 is string {
+        evProvince = p1;
+    }
+    anydata|() cb = ev["createdBy"];
+    if cb is string {
+        evCreatedBy = cb;
+    }
+    anydata|() st0 = ev["startTime"];
+    if st0 is string {
+        evStartTime = st0;
+    }
+    anydata|() st = ev["status"];
+    if st is string {
+        evStatus = st;
+    }
 
-    // Check permissions: Admin Operators and Admins can update any event, creators can update their own
-    if role != "ADMIN_OPERATOR" && role != "ADMIN" && event.createdBy != userId {
-        return utils:forbidden(caller, "Can only update events you created");
+    // Disallow editing approved events for all roles
+    if evStatus == "APPROVED" {
+        return utils:forbidden(caller, "Approved events cannot be edited");
+    }
+
+    // Check permissions: SUPER_ADMIN any; ADMIN within province; ADMIN_OPERATOR within city; creators can update own
+    boolean updateAllowed = false;
+    if role == "SUPER_ADMIN" {
+        updateAllowed = true;
+    } else if role == "ADMIN_OPERATOR" {
+        updateAllowed = canManageEventInCity(<string>userId, evCity);
+    } else if role == "ADMIN" {
+        updateAllowed = canManageEventInProvince(<string>userId, evCity);
+    } else if evCreatedBy == userId {
+        updateAllowed = true;
+    }
+    if !updateAllowed {
+        return utils:forbidden(caller);
     }
 
     map<json> m = <map<json>>body;
@@ -858,6 +953,16 @@ public function updateEvent(http:Caller caller, http:Request req, string eventId
     }
     if m.hasKey("city") {
         updateData["city"] = m["city"];
+    }
+    if m.hasKey("province") {
+        updateData["province"] = m["province"];
+    }
+    if m.hasKey("city") || m.hasKey("province") {
+        string newCity = m.hasKey("city") ? m["city"].toString() : evCity;
+        string newProvince = m.hasKey("province") ? m["province"].toString() : evProvince;
+        if newProvince != "" && !isEventCityInProvince(newCity, newProvince) {
+            return utils:badRequest(caller, "City does not belong to selected province");
+        }
     }
     if m.hasKey("latitude") {
         float|error lat = float:fromString(m["latitude"].toString());
@@ -891,11 +996,11 @@ public function updateEvent(http:Caller caller, http:Request req, string eventId
         }
     }
     if m.hasKey("startTime") {
-        string st = m["startTime"].toString();
-        if !utils:validateTimeFormat(st) {
+        string stStart = m["startTime"].toString();
+        if !utils:validateTimeFormat(stStart) {
             return utils:badRequest(caller, "Invalid startTime format");
         }
-        updateData["startTime"] = st;
+        updateData["startTime"] = stStart;
     }
     if m.hasKey("endTime") {
         string et = m["endTime"].toString();
@@ -903,7 +1008,7 @@ public function updateEvent(http:Caller caller, http:Request req, string eventId
             return utils:badRequest(caller, "Invalid endTime format");
         }
         // If startTime is not provided, read existing to validate order
-        string startToCompare = m.hasKey("startTime") ? m["startTime"].toString() : event.startTime;
+        string startToCompare = m.hasKey("startTime") ? m["startTime"].toString() : evStartTime;
         boolean|error timeOrderOk = utils:validateTimeOrder(startToCompare, et);
         if timeOrderOk is boolean && timeOrderOk {
             updateData["endTime"] = et;
@@ -911,15 +1016,21 @@ public function updateEvent(http:Caller caller, http:Request req, string eventId
             return utils:badRequest(caller, "endTime must be after startTime");
         }
     }
+    if m.hasKey("eventType") {
+        updateData["eventType"] = m["eventType"];
+    }
     if m.hasKey("reward") {
         updateData["reward"] = m["reward"];
     }
 
+    if updateData.length() == 0 {
+        return utils:badRequest(caller, "No fields to update");
+    }
     updateData["updatedAt"] = time:utcToString(time:utcNow());
 
     mongodb:UpdateResult|error ur = eventCollection->updateOne({"_id": eventId}, {"set": updateData});
     if ur is error {
-        return utils:serverError(caller);
+        return utils:serverError(caller, ur.message());
     }
     if ur.matchedCount == 0 {
         return utils:notFound(caller, "Event not found");
@@ -938,23 +1049,31 @@ public function deleteEvent(http:Caller caller, http:Request req, string eventId
 
     string tokenStr = (<string>authHeader).substring(7);
     string|error role = token:extractRole(tokenStr);
+    string|error userId = token:extractUserId(tokenStr);
 
-    if role is error {
+    if role is error || userId is error {
         return utils:unauthorized(caller, "Invalid token");
     }
 
-    // Only ADMIN and ADMIN_OPERATOR can delete events
-    if role != "ADMIN" && role != "ADMIN_OPERATOR" {
-        return utils:forbidden(caller);
-    }
-
-    // Get event details before deletion to update user's organizeEventId array
     Event|error|() event = eventCollection->findOne({"_id": eventId});
     if event is error {
         return utils:serverError(caller);
     }
     if event is () {
         return utils:notFound(caller, "Event not found");
+    }
+
+    if role != "ADMIN" && role != "ADMIN_OPERATOR" && role != "SUPER_ADMIN" {
+        return utils:forbidden(caller);
+    }
+    if role == "ADMIN_OPERATOR" {
+        if !canManageEventInCity(<string>userId, event.city) {
+            return utils:forbidden(caller, "You can only delete events in your city");
+        }
+    } else if role == "ADMIN" {
+        if !canManageEventInProvince(<string>userId, event.city) {
+            return utils:forbidden(caller, "You can only delete events in your province");
+        }
     }
 
     // Delete related participants and sponsors first for cascade cleanup
