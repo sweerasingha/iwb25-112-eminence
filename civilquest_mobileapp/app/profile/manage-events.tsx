@@ -25,14 +25,12 @@ export default function ManageMyEventsScreen() {
     sponsorActions,
     participationActions,
     updating,
-    editForm,
     handleRefresh,
     handleCreateEvent,
     handleEventAction,
     handleUpdateEvent,
     handleApproveSponsor,
     handleRejectSponsor,
-    handleFormChange,
     setEditModalVisible,
     setSponsorsModalVisible,
   } = useManageEvents();
@@ -83,11 +81,9 @@ export default function ManageMyEventsScreen() {
         <EditEventModal
           visible={editModalVisible}
           event={selectedEvent}
-          editForm={editForm}
           updating={updating}
           onClose={() => setEditModalVisible(false)}
           onUpdate={handleUpdateEvent}
-          onFormChange={handleFormChange}
         />
 
         {/* Sponsors Modal */}

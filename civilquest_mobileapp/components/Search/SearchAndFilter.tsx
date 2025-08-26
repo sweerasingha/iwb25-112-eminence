@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
   Modal,
@@ -11,6 +10,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { globalStyles, COLORS, SPACING, LAYOUT, FONTS } from "../../theme";
+import { InputField } from "../UI";
 
 interface SearchAndFilterProps {
   searchValue: string;
@@ -130,34 +130,28 @@ export const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
   return (
     <View style={styles.container}>
       {/* Search Bar */}
-      <View
-        style={[
-          styles.searchContainer,
-          isFocused && styles.searchContainerFocused,
-        ]}
-      >
-        <Ionicons name="search" size={20} color={COLORS.textTertiary} />
-        <TextInput
-          style={styles.searchInput}
+      <View style={styles.searchContainer}>
+        <InputField
           placeholder="Search events, locations..."
-          placeholderTextColor={COLORS.textTertiary}
           value={searchValue}
           onChangeText={onSearchChange}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
+          leftIcon="search"
+          variant="filled"
+          rightIcon={
+            searchValue.length > 0 ? (
+              <TouchableOpacity
+                onPress={() => onSearchChange("")}
+                style={styles.clearSearchButton}
+              >
+                <Ionicons
+                  name="close-circle"
+                  size={20}
+                  color={COLORS.textTertiary}
+                />
+              </TouchableOpacity>
+            ) : undefined
+          }
         />
-        {searchValue.length > 0 && (
-          <TouchableOpacity
-            onPress={() => onSearchChange("")}
-            style={styles.clearSearchButton}
-          >
-            <Ionicons
-              name="close-circle"
-              size={20}
-              color={COLORS.textTertiary}
-            />
-          </TouchableOpacity>
-        )}
       </View>
 
       {/* Filter Buttons */}

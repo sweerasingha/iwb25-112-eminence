@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   View,
   Text,
@@ -6,36 +6,80 @@ import {
   Modal,
   TouchableOpacity,
   ScrollView,
-  TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Button } from "../";
+import { z } from "zod";
+import { Button, InputField } from "../";
 import { COLORS, SPACING, LAYOUT } from "../../theme";
 import { Event } from "../../types";
+import { useForm } from "../../hooks";
+
+const editEventSchema = z.object({
+  eventTitle: z.string().min(1, "Event title is required"),
+  eventDescription: z.string().min(1, "Event description is required"),
+  reward: z
+    .string()
+    .min(1, "Reward is required")
+    .refine((val) => !isNaN(Number(val)), {
+      message: "Reward must be a valid number",
+    }),
+});
+
+type EditEventFormData = z.infer<typeof editEventSchema>;
 
 interface EditEventModalProps {
   visible: boolean;
   event: Event | null;
-  editForm: {
-    eventTitle: string;
-    eventDescription: string;
-    reward: string;
-  };
   updating: boolean;
   onClose: () => void;
-  onUpdate: () => void;
-  onFormChange: (field: string, value: string) => void;
+  onUpdate: (formData: EditEventFormData) => void;
 }
 
 export default function EditEventModal({
   visible,
   event,
-  editForm,
   updating,
   onClose,
   onUpdate,
-  onFormChange,
 }: EditEventModalProps) {
+  const {
+    formData,
+    errors,
+    touched,
+    isValid,
+    handleChange,
+    handleBlur,
+    validate,
+    getFieldProps,
+    reset,
+    setFormData,
+  } = useForm<EditEventFormData>(
+    {
+      eventTitle: "",
+      eventDescription: "",
+      reward: "",
+    },
+    editEventSchema
+  );
+
+  // Reset form when event changes
+  useEffect(() => {
+    if (event && visible) {
+      setFormData({
+        eventTitle: event.eventTitle || "",
+        eventDescription: event.eventDescription || "",
+        reward: event.reward?.toString() || "",
+      });
+    }
+  }, [event?.id, visible, setFormData]); // Only depend on event ID and modal visibility
+
+  const handleFormSubmit = () => {
+    const isValidForm = validate();
+    if (isValidForm) {
+      onUpdate(formData);
+    }
+  };
+
   return (
     <Modal
       visible={visible}
@@ -54,38 +98,37 @@ export default function EditEventModal({
 
         <ScrollView style={styles.modalContent}>
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Event Title</Text>
-            <TextInput
-              style={styles.input}
-              value={editForm.eventTitle}
-              onChangeText={(text) => onFormChange("eventTitle", text)}
+            <InputField
+              label="Event Title"
               placeholder="Enter event title"
-              placeholderTextColor={COLORS.textTertiary}
+              {...getFieldProps("eventTitle")}
+              error={touched.eventTitle ? errors.eventTitle : undefined}
+              required
             />
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Event Description</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              value={editForm.eventDescription}
-              onChangeText={(text) => onFormChange("eventDescription", text)}
+            <InputField
+              label="Event Description"
               placeholder="Enter event description"
-              placeholderTextColor={COLORS.textTertiary}
+              {...getFieldProps("eventDescription")}
+              error={
+                touched.eventDescription ? errors.eventDescription : undefined
+              }
               multiline
               numberOfLines={4}
+              required
             />
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Reward Points</Text>
-            <TextInput
-              style={styles.input}
-              value={editForm.reward}
-              onChangeText={(text) => onFormChange("reward", text)}
+            <InputField
+              label="Reward Points"
               placeholder="Enter reward points"
-              placeholderTextColor={COLORS.textTertiary}
+              {...getFieldProps("reward")}
+              error={touched.reward ? errors.reward : undefined}
               keyboardType="numeric"
+              required
             />
           </View>
 
@@ -93,7 +136,7 @@ export default function EditEventModal({
             title="Update Event"
             variant="primary"
             fullWidth
-            onPress={onUpdate}
+            onPress={handleFormSubmit}
             loading={updating}
             disabled={updating}
             style={styles.updateButton}
@@ -138,26 +181,6 @@ const styles = StyleSheet.create({
   },
   inputGroup: {
     marginBottom: SPACING.lg,
-  },
-  inputLabel: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: COLORS.textPrimary,
-    marginBottom: SPACING.sm,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: COLORS.backgroundSecondary,
-    borderRadius: LAYOUT.borderRadius.md,
-    padding: SPACING.md,
-    fontSize: 16,
-    color: COLORS.textPrimary,
-    backgroundColor: COLORS.surface,
-    minHeight: 48,
-  },
-  textArea: {
-    minHeight: 100,
-    textAlignVertical: "top",
   },
   updateButton: {
     marginTop: SPACING.lg,

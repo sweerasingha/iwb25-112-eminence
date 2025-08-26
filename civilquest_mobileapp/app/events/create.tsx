@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { useSelector } from "react-redux";
+import { z } from "zod";
 import { RootState } from "../../store";
 import {
   InputField,
@@ -27,27 +28,56 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as ImagePicker from "expo-image-picker";
 import { GetSelectedLocation } from "../../components";
+import { useForm } from "../../hooks";
 
 const { width } = Dimensions.get("window");
+
+// Create form schema
+const createEventSchema = z.object({
+  eventTitle: z.string().min(1, "Event title is required"),
+  eventDescription: z.string().min(1, "Event description is required"),
+  city: z.string().min(1, "City is required"),
+  eventType: z.string().min(1, "Event type is required"),
+  reward: z
+    .string()
+    .min(1, "Reward is required")
+    .refine((val) => !isNaN(Number(val)), {
+      message: "Reward must be a valid number",
+    }),
+});
+
+type CreateEventFormData = z.infer<typeof createEventSchema>;
 
 export default function CreateEventScreen() {
   const { tokenUser } = useSelector((state: RootState) => state.auth);
   const [loading, setLoading] = useState(false);
-
-  // Form state
-  const [eventTitle, setEventTitle] = useState("");
-  const [eventType, setEventType] = useState("");
-  const [eventDescription, setEventDescription] = useState("");
   const [location, setLocation] = useState<EventLocation | null>(null);
-  const [city, setCity] = useState("");
   const [eventDate, setEventDate] = useState(new Date());
   const [eventTime, setEventTime] = useState("09:00");
   const [endTime, setEndTime] = useState("13:00");
-  const [reward, setReward] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [locationError, setLocationError] = useState("");
+  const [dateTimeError, setDateTimeError] = useState("");
 
-  // Form validation
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const {
+    formData,
+    errors,
+    touched,
+    isValid,
+    handleChange,
+    handleBlur,
+    validate,
+    getFieldProps,
+  } = useForm<CreateEventFormData>(
+    {
+      eventTitle: "",
+      eventDescription: "",
+      city: "",
+      eventType: "",
+      reward: "",
+    },
+    createEventSchema
+  );
 
   // Check if user is premium
   const isPremium = tokenUser?.role === "PREMIUM_USER";
@@ -83,19 +113,18 @@ export default function CreateEventScreen() {
   }
 
   const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
+    // First validate the form schema
+    const isValidForm = validate();
 
-    if (!eventTitle.trim()) newErrors.eventTitle = "Event title is required";
-    if (!eventDescription.trim())
-      newErrors.eventDescription = "Event description is required";
-    if (!location?.displayName.trim())
-      newErrors.location = "Location is required";
-    if (!city.trim()) newErrors.city = "City is required";
-    if (!eventType.trim()) newErrors.eventType = "Event type is required";
-    if (!reward.trim()) newErrors.reward = "Reward is required";
+    // Then validate custom fields
+    setLocationError("");
+    setDateTimeError("");
 
-    if (reward && isNaN(Number(reward))) {
-      newErrors.reward = "Reward must be a valid number";
+    let hasErrors = false;
+
+    if (!location?.displayName.trim()) {
+      setLocationError("Location is required");
+      hasErrors = true;
     }
 
     // Validate start and end times
@@ -105,7 +134,8 @@ export default function CreateEventScreen() {
     const endTimeInMinutes = endHours * 60 + endMinutes;
 
     if (endTimeInMinutes <= startTimeInMinutes) {
-      newErrors.endTime = "End time must be after start time";
+      setDateTimeError("End time must be after start time");
+      hasErrors = true;
     }
 
     // Check if event date is in the future
@@ -114,11 +144,11 @@ export default function CreateEventScreen() {
     selectedDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
     if (selectedDateTime <= new Date()) {
-      newErrors.eventDate = "Event date and time must be in the future";
+      setDateTimeError("Event date and time must be in the future");
+      hasErrors = true;
     }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return isValidForm && !hasErrors;
   };
 
   const handleSubmit = async () => {
@@ -131,15 +161,15 @@ export default function CreateEventScreen() {
       const dateString = baseDate.toISOString().split("T")[0]; // YYYY-MM-DD
 
       const eventData: CreateEventRequest = {
-        eventTitle: eventTitle.trim(),
-        eventType: eventType.trim(),
-        eventDescription: eventDescription.trim(),
+        eventTitle: formData.eventTitle.trim(),
+        eventType: formData.eventType.trim(),
+        eventDescription: formData.eventDescription.trim(),
         location: location!.displayName.trim(),
-        city: city.trim(),
+        city: formData.city.trim(),
         date: dateString,
         startTime: eventTime,
         endTime: endTime,
-        reward: reward.trim(),
+        reward: formData.reward.trim(),
         longitude: location!.longitude,
         latitude: location!.latitude,
       };
@@ -287,18 +317,18 @@ export default function CreateEventScreen() {
           <InputField
             label="Event Title"
             placeholder="Enter event title"
-            value={eventTitle}
-            onChangeText={setEventTitle}
-            error={errors.eventTitle}
+            {...getFieldProps("eventTitle")}
+            error={touched.eventTitle ? errors.eventTitle : undefined}
             required
           />
 
           <InputField
             label="Event Description"
             placeholder="Describe your event"
-            value={eventDescription}
-            onChangeText={setEventDescription}
-            error={errors.eventDescription}
+            {...getFieldProps("eventDescription")}
+            error={
+              touched.eventDescription ? errors.eventDescription : undefined
+            }
             multiline
             numberOfLines={4}
             required
@@ -341,16 +371,15 @@ export default function CreateEventScreen() {
           </View>
 
           <GetSelectedLocation
-            validationError={errors.location}
+            validationError={locationError}
             setLocation={setLocation}
           />
 
           <InputField
             label="City"
             placeholder="City where event takes place"
-            value={city}
-            onChangeText={setCity}
-            error={errors.city}
+            {...getFieldProps("city")}
+            error={touched.city ? errors.city : undefined}
             required
           />
 
@@ -360,7 +389,7 @@ export default function CreateEventScreen() {
             mode="date"
             onChange={setEventDate}
             placeholder="Select event date"
-            error={errors.eventDate}
+            error={dateTimeError}
             minimumDate={new Date()}
             required
           />
@@ -370,7 +399,7 @@ export default function CreateEventScreen() {
             value={eventTime}
             onChange={setEventTime}
             placeholder="Select start time"
-            error={errors.eventTime}
+            error={dateTimeError}
             required
           />
 
@@ -379,25 +408,23 @@ export default function CreateEventScreen() {
             value={endTime}
             onChange={setEndTime}
             placeholder="Select end time"
-            error={errors.endTime}
+            error={dateTimeError}
             required
           />
 
           <InputField
             label="Event Type"
             placeholder="e.g., Environmental, Construction, Social"
-            value={eventType}
-            onChangeText={setEventType}
-            error={errors.eventType}
+            {...getFieldProps("eventType")}
+            error={touched.eventType ? errors.eventType : undefined}
             required
           />
 
           <InputField
             label="Reward"
             placeholder="Enter reward amount"
-            value={reward}
-            onChangeText={setReward}
-            error={errors.reward}
+            {...getFieldProps("reward")}
+            error={touched.reward ? errors.reward : undefined}
             keyboardType="numeric"
             required
           />

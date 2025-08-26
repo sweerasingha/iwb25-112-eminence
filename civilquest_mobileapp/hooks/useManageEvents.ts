@@ -26,13 +26,6 @@ export const useManageEvents = () => {
   }>({});
   const [updating, setUpdating] = useState(false);
 
-  // Edit form state
-  const [editForm, setEditForm] = useState({
-    eventTitle: "",
-    eventDescription: "",
-    reward: "",
-  });
-
   // Check if user is premium
   const isPremium = tokenUser?.role === "PREMIUM_USER";
 
@@ -104,22 +97,21 @@ export const useManageEvents = () => {
 
   const handleEditEvent = (event: Event) => {
     setSelectedEvent(event);
-    setEditForm({
-      eventTitle: event.eventTitle || "",
-      eventDescription: event.eventDescription || "",
-      reward: event.reward || "",
-    });
     setEditModalVisible(true);
   };
 
-  const handleUpdateEvent = async () => {
+  const handleUpdateEvent = async (formData: {
+    eventTitle: string;
+    eventDescription: string;
+    reward: string;
+  }) => {
     if (!selectedEvent) return;
 
     try {
       setUpdating(true);
       const response = await eventService.updateEvent(
         selectedEvent.id,
-        editForm
+        formData
       );
 
       if (response.success) {
@@ -262,10 +254,6 @@ export const useManageEvents = () => {
     );
   };
 
-  const handleFormChange = (field: string, value: string) => {
-    setEditForm((prev) => ({ ...prev, [field]: value }));
-  };
-
   return {
     // State
     myEvents,
@@ -279,7 +267,6 @@ export const useManageEvents = () => {
     sponsorActions,
     participationActions,
     updating,
-    editForm,
 
     // Actions
     handleRefresh,
@@ -288,7 +275,6 @@ export const useManageEvents = () => {
     handleUpdateEvent,
     handleApproveSponsor,
     handleRejectSponsor,
-    handleFormChange,
     setEditModalVisible,
     setSponsorsModalVisible,
   };

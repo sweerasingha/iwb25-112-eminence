@@ -1,8 +1,8 @@
 import React from "react";
-import { View, Text, StyleSheet, TextInput } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-import { SponsorshipDropdown } from "../UI";
+import { SponsorshipDropdown, InputField } from "../UI";
 import { Button } from "../UI";
 import { globalStyles, COLORS, SPACING, LAYOUT } from "../../theme";
 import { LeaderboardFilters as LeaderboardFiltersType } from "../../types";
@@ -65,26 +65,14 @@ export const LeaderboardFilters: React.FC<LeaderboardFiltersProps> = ({
       <View style={styles.filterControls}>
         {/* Search Filter */}
         <View style={styles.filterGroup}>
-          <Text style={[globalStyles.label, styles.searchLabel]}>
-            Search Players
-          </Text>
-          <View style={styles.searchContainer}>
-            <Ionicons
-              name="search"
-              size={20}
-              color={COLORS.textTertiary}
-              style={styles.searchIcon}
-            />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search by name or email..."
-              placeholderTextColor={COLORS.textTertiary}
-              value={filters.search || ""}
-              onChangeText={handleSearchChange}
-              returnKeyType="search"
-              clearButtonMode="while-editing"
-            />
-          </View>
+          <InputField
+            label="Search Players"
+            placeholder="Search by name or email..."
+            value={filters.search || ""}
+            onChangeText={handleSearchChange}
+            leftIcon="search"
+            variant="filled"
+          />
         </View>
 
         {/* City Filter */}

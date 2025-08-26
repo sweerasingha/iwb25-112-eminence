@@ -2,7 +2,6 @@ import { Ionicons } from "@expo/vector-icons";
 import React, { useState, useEffect } from "react";
 import {
   View,
-  TextInput,
   TouchableOpacity,
   Text,
   StyleSheet,
@@ -10,6 +9,7 @@ import {
 } from "react-native";
 import { COLORS, FONTS, SPACING } from "theme";
 import { EventLocation } from "types";
+import { InputField } from "../UI";
 
 interface LocationResult {
   place_id: number;
@@ -80,24 +80,15 @@ export default function GetSelectedLocation({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.labelText}>
-        {selectedLocation ? "Change Location" : "Select Location"}
-      </Text>
-      <TextInput
-        style={[
-          styles.input,
-          { borderColor: validationError ? COLORS.error : "#ccc" },
-        ]}
+      <InputField
+        label={selectedLocation ? "Change Location" : "Select Location"}
         placeholder="Search location..."
         value={query}
         onChangeText={setQuery}
+        error={validationError}
+        leftIcon="location"
+        variant="filled"
       />
-      {validationError && (
-        <View style={styles.errorContainer}>
-          <Ionicons name="alert-circle" size={16} color={COLORS.error} />
-          <Text style={styles.errorText}>{validationError}</Text>
-        </View>
-      )}
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
