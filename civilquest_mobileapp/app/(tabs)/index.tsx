@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
-  FlatList,
   StyleSheet,
   RefreshControl,
   Animated,
@@ -137,26 +136,7 @@ export default function HomeScreen() {
     );
   };
 
-  const featuredEvents = filteredEvents
-    .filter((event) => event.status === "APPROVED")
-    .slice(0, 3);
-
-  if (isLoadingEvents && filteredEvents.length === 0) {
-    return (
-      <View style={globalStyles.container}>
-        <Header
-          title="Civil Quest"
-          subtitle="Discover Engineering Events"
-          variant="gradient"
-        />
-        <Loading
-          visible={true}
-          message="Loading amazing events for you..."
-          variant="skeleton"
-        />
-      </View>
-    );
-  }
+  
 
   const headerOpacity = scrollY.interpolate({
     inputRange: [0, 100],
@@ -213,27 +193,6 @@ export default function HomeScreen() {
           />
         </View>
 
-        {/* Featured Events Section */}
-        {featuredEvents.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={[globalStyles.h3, styles.sectionTitle]}>
-                Featured Events
-              </Text>
-              <Ionicons name="star" size={20} color={COLORS.warning} />
-            </View>
-            <FlatList
-              data={featuredEvents}
-              renderItem={renderFeaturedEvent}
-              keyExtractor={(item) => `featured-${item.id}`}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.featuredList}
-              snapToInterval={LAYOUT.window.width - SPACING.xl}
-              decelerationRate="fast"
-            />
-          </View>
-        )}
 
         {/* All Events Section */}
         <View style={styles.section}>

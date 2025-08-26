@@ -98,6 +98,8 @@ class EventService {
         sanitizeForApi(eventData.eventDescription)
       );
       data.append("reward", sanitizeForApi(eventData.reward));
+      data.append("longitude", Number(eventData.longitude).toString());
+      data.append("latitude", Number(eventData.latitude).toString());
 
       if (imageFile) {
         data.append("image", imageFile);

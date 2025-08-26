@@ -22,10 +22,11 @@ import {
 } from "../../components";
 import { globalStyles, COLORS, SPACING } from "../../theme";
 import { eventService } from "../../services/event";
-import { CreateEventRequest } from "../../types";
+import { CreateEventRequest, EventLocation } from "../../types";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as ImagePicker from "expo-image-picker";
+import GetSelectedLocation from "components/GetSelectedLocation";
 
 const { width } = Dimensions.get("window");
 
@@ -37,11 +38,11 @@ export default function CreateEventScreen() {
   const [eventTitle, setEventTitle] = useState("");
   const [eventType, setEventType] = useState("");
   const [eventDescription, setEventDescription] = useState("");
-  const [location, setLocation] = useState("");
+  const [location, setLocation] = useState<EventLocation | null>(null);
   const [city, setCity] = useState("");
   const [eventDate, setEventDate] = useState(new Date());
   const [eventTime, setEventTime] = useState("09:00");
-  const [endTime, setEndTime] = useState("13:00"); 
+  const [endTime, setEndTime] = useState("13:00");
   const [reward, setReward] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
@@ -87,7 +88,7 @@ export default function CreateEventScreen() {
     if (!eventTitle.trim()) newErrors.eventTitle = "Event title is required";
     if (!eventDescription.trim())
       newErrors.eventDescription = "Event description is required";
-    if (!location.trim()) newErrors.location = "Location is required";
+    if (!location?.displayName.trim()) newErrors.location = "Location is required";
     if (!city.trim()) newErrors.city = "City is required";
     if (!eventType.trim()) newErrors.eventType = "Event type is required";
     if (!reward.trim()) newErrors.reward = "Reward is required";
@@ -132,12 +133,14 @@ export default function CreateEventScreen() {
         eventTitle: eventTitle.trim(),
         eventType: eventType.trim(),
         eventDescription: eventDescription.trim(),
-        location: location.trim(),
+        location: location!.displayName.trim(),
         city: city.trim(),
         date: dateString,
         startTime: eventTime,
         endTime: endTime,
         reward: reward.trim(),
+        longitude: location!.longitude,
+        latitude: location!.latitude,
       };
 
       // Prepare image file if selected
@@ -336,13 +339,9 @@ export default function CreateEventScreen() {
             )}
           </View>
 
-          <InputField
-            label="Location"
-            placeholder="Event venue/location"
-            value={location}
-            onChangeText={setLocation}
-            error={errors.location}
-            required
+          <GetSelectedLocation
+            validationError={errors.location}
+            setLocation={setLocation}
           />
 
           <InputField
