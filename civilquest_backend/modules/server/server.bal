@@ -319,7 +319,7 @@ service /api on httpListener {
 
     resource function get users/premium/pending(http:Caller caller, http:Request req) returns error? {
         check middleware:tokenValidation(caller, req);
-        check middleware:assertAnyRole(caller, req, ["ADMIN_OPERATOR"]);
+        check middleware:assertAnyRole(caller, req, ["ADMIN_OPERATOR", "ADMIN"]);
         check user:getPendingPremiumRequests(caller, req);
     }
 

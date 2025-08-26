@@ -165,6 +165,83 @@ function init() returns error? {
     sponsorCollection = check database:db->getCollection("sponsors");
 }
 
+// Helper to allow adding new fields
+function toPlainJsonMap(json j) returns map<json> {
+    map<json> out = {};
+    if j is map<json> {
+        foreach var [k, v] in j.entries() {
+            out[k] = v;
+        }
+    }
+    return out;
+}
+
+// Get approved sponsors for a given event
+function getApprovedSponsorsJson(string eventId) returns json[] {
+    json[] sponsorsDetailed = [];
+    stream<record {|
+        string _id;
+        string id?;
+        string userId;
+        string eventId;
+        string sponsorType;
+        float? amount;
+        float? donationAmount;
+        string? donation;
+        string description;
+        string approvedStatus;
+        string createdAt;
+        string updatedAt;
+    |}, error?>|error sponsorStream = sponsorCollection->find({"eventId": eventId, "approvedStatus": "APPROVED"});
+    if sponsorStream is stream<record {|
+        string _id;
+        string id?;
+        string userId;
+        string eventId;
+        string sponsorType;
+        float? amount;
+        float? donationAmount;
+        string? donation;
+        string description;
+        string approvedStatus;
+        string createdAt;
+        string updatedAt;
+    |}, error?> {
+        error? forEachResult = sponsorStream.forEach(function(record {|
+                    string _id;
+                    string id?;
+                    string userId;
+                    string eventId;
+                    string sponsorType;
+                    float? amount;
+                    float? donationAmount;
+                    string? donation;
+                    string description;
+                    string approvedStatus;
+                    string createdAt;
+                    string updatedAt;
+                |} s) {
+            sponsorsDetailed.push({
+                _id: s._id,
+                id: s.id,
+                userId: s.userId,
+                sponsorType: s.sponsorType,
+                amount: s.amount,
+                donationAmount: s.donationAmount,
+                donation: s.donation,
+                description: s.description,
+                approvedStatus: s.approvedStatus,
+                createdAt: s.createdAt,
+                updatedAt: s.updatedAt
+            });
+        });
+        if forEachResult is error {
+            // ignore errors and return what we have
+        }
+    }
+    return sponsorsDetailed;
+}
+
 public function createEvent(http:Caller caller, http:Request req) returns error? {
     // Require authentication; derive creator from token rather than request body
     string|error? authHeader = req.getHeader("Authorization");
@@ -636,68 +713,78 @@ public function getEvents(http:Caller caller, http:Request req) returns error? {
         }
     }
 
-    stream<RawDoc, error?>|error events = eventCollection->find(filter);
+    // Pagination and sorting
+    int page = 1;
+    int perPage = 20;
+    string sortBy = "createdAt";
+    int sortDir = -1; // -1 desc, 1 asc
+
+    if queryParams.hasKey("page") {
+        string[]? pArr = queryParams["page"];
+        if pArr is string[] && pArr.length() > 0 {
+            int|error p = int:fromString(pArr[0]);
+            if p is int && p > 0 {
+                page = p;
+            }
+        }
+    }
+    if queryParams.hasKey("limit") {
+        string[]? lArr = queryParams["limit"];
+        if lArr is string[] && lArr.length() > 0 {
+            int|error l = int:fromString(lArr[0]);
+            if l is int {
+                if l < 1 {
+                    perPage = 1;
+                } else if l > 100 {
+                    perPage = 100;
+                } else {
+                    perPage = l;
+                }
+            }
+        }
+    }
+    if queryParams.hasKey("sortBy") {
+        string[]? sbArr = queryParams["sortBy"];
+        if sbArr is string[] && sbArr.length() > 0 {
+            string sb = sbArr[0];
+            // Allow-listed sort fields
+            if sb == "createdAt" || sb == "updatedAt" || sb == "date" || sb == "city" || sb == "eventTitle" || sb == "status" {
+                sortBy = sb;
+            }
+        }
+    }
+    if queryParams.hasKey("sortOrder") {
+        string[]? soArr = queryParams["sortOrder"];
+        if soArr is string[] && soArr.length() > 0 {
+            string so = soArr[0].toLowerAscii();
+            if so == "asc" {
+                sortDir = 1;
+            } else if so == "desc" {
+                sortDir = -1;
+            }
+        }
+    }
+
+    int skip = (page - 1) * perPage;
+    map<json> sortSpec = {};
+    sortSpec[sortBy] = sortDir;
+
+    stream<RawDoc, error?>|error events = eventCollection->find(filter, {"sort": sortSpec, "skip": skip, "limit": perPage});
     if events is error {
         return utils:serverError(caller);
     }
 
     json[] eventList = [];
     check events.forEach(function(RawDoc rawDoc) {
-        map<json> doc = rawDoc;
-        string eid = doc.hasKey("_id") && doc["_id"] is string ? <string>doc["_id"] : doc["_id"].toString();
-        string id = doc.hasKey("id") && doc["id"] is string ? <string>doc["id"] : eid;
-        string createdAt = doc.hasKey("createdAt") && doc["createdAt"] is string ? <string>doc["createdAt"] : doc["createdAt"].toString();
-        string updatedAt = doc.hasKey("updatedAt") && doc["updatedAt"] is string ? <string>doc["updatedAt"] : doc["updatedAt"].toString();
-        string date = doc.hasKey("date") && doc["date"] is string ? <string>doc["date"] : doc["date"].toString();
-        string startTime = doc.hasKey("startTime") && doc["startTime"] is string ? <string>doc["startTime"] : doc["startTime"].toString();
-        json endTime = doc.hasKey("endTime") ? doc["endTime"] : ();
-        string location = doc.hasKey("location") && doc["location"] is string ? <string>doc["location"] : doc["location"].toString();
-        string city = doc.hasKey("city") && doc["city"] is string ? <string>doc["city"] : doc["city"].toString();
-        json provinceJ = doc.hasKey("province") ? doc["province"] : ();
-        json latitudeJ = doc.hasKey("latitude") ? doc["latitude"] : ();
-        json longitudeJ = doc.hasKey("longitude") ? doc["longitude"] : ();
-        string eventTitle = doc.hasKey("eventTitle") && doc["eventTitle"] is string ? <string>doc["eventTitle"] : doc["eventTitle"].toString();
-        string eventType = doc.hasKey("eventType") && doc["eventType"] is string ? <string>doc["eventType"] : doc["eventType"].toString();
-        string eventDescription = doc.hasKey("eventDescription") && doc["eventDescription"] is string ? <string>doc["eventDescription"] : doc["eventDescription"].toString();
-        string createdBy = doc.hasKey("createdBy") && doc["createdBy"] is string ? <string>doc["createdBy"] : doc["createdBy"].toString();
-        json approvedBy = doc.hasKey("approvedBy") ? doc["approvedBy"] : ();
-        string status = doc.hasKey("status") && doc["status"] is string ? <string>doc["status"] : doc["status"].toString();
-        json sponsor = doc.hasKey("sponsor") ? doc["sponsor"] : [];
-        json participant = doc.hasKey("participant") ? doc["participant"] : [];
-        string reward = doc.hasKey("reward") && doc["reward"] is string ? <string>doc["reward"] : doc["reward"].toString();
-        string imageUrl = doc.hasKey("image_url") && doc["image_url"] is string ? <string>doc["image_url"] : doc["image_url"].toString();
+        map<json> eventMap = rawDoc;
+        string eid = eventMap.hasKey("_id") && eventMap["_id"] is string ? <string>eventMap["_id"] : eventMap["_id"].toString();
+        if !eventMap.hasKey("id") || !(eventMap["id"] is string) {
+            eventMap["id"] = eid;
+        }
 
-        // Get actual participant count from participant collection for accuracy
+        // Actual participant count
         int|error participantCount = participantCollection->countDocuments({"eventId": eid});
-        int actualParticipantCount = participantCount is int ? participantCount : 0;
-
-        json eventData = {
-            "_id": eid,
-            "id": id,
-            "createdAt": createdAt,
-            "updatedAt": updatedAt,
-            "date": date,
-            "startTime": startTime,
-            "endTime": endTime,
-            "location": location,
-            "city": city,
-            "latitude": latitudeJ,
-            "longitude": longitudeJ,
-            "province": provinceJ,
-            "eventTitle": eventTitle,
-            "eventType": eventType,
-            "eventDescription": eventDescription,
-            "createdBy": createdBy,
-            "approvedBy": approvedBy,
-            "status": status,
-            "sponsor": sponsor,
-            "participant": participant,
-            "reward": reward,
-            "image_url": imageUrl,
-            "participantCount": actualParticipantCount
-        };
-
-        map<json> eventDataMap = <map<json>>eventData;
+        eventMap["participantCount"] = participantCount is int ? participantCount : 0;
 
         // If user is authenticated, check their application status
         if currentUserId is string {
@@ -707,83 +794,23 @@ public function getEvents(http:Caller caller, http:Request req) returns error? {
             });
 
             if userParticipation is Participant {
-                eventDataMap["userApplicationStatus"] = {
+                eventMap["userApplicationStatus"] = {
                     "hasApplied": true,
                     "method": userParticipation.method,
                     "isParticipated": userParticipation.isParticipated,
                     "appliedAt": userParticipation.createdAt
                 };
             } else {
-                eventDataMap["userApplicationStatus"] = {"hasApplied": false};
+                eventMap["userApplicationStatus"] = {"hasApplied": false};
             }
         }
 
-        // Attach detailed approved sponsors list
-        json[] sponsorsDetailed = [];
-        stream<record {|
-            string _id;
-            string id?;
-            string userId;
-            string eventId;
-            string sponsorType;
-            float? amount;
-            float? donationAmount;
-            string? donation;
-            string description;
-            string approvedStatus;
-            string createdAt;
-            string updatedAt;
-        |}, error?>|error sponsorStream = sponsorCollection->find({"eventId": eid, "approvedStatus": "APPROVED"});
-        if sponsorStream is stream<record {|
-            string _id;
-            string id?;
-            string userId;
-            string eventId;
-            string sponsorType;
-            float? amount;
-            float? donationAmount;
-            string? donation;
-            string description;
-            string approvedStatus;
-            string createdAt;
-            string updatedAt;
-        |}, error?> {
-            error? forEachResult = sponsorStream.forEach(function(record {|
-                        string _id;
-                        string id?;
-                        string userId;
-                        string eventId;
-                        string sponsorType;
-                        float? amount;
-                        float? donationAmount;
-                        string? donation;
-                        string description;
-                        string approvedStatus;
-                        string createdAt;
-                        string updatedAt;
-                    |} s) {
-                sponsorsDetailed.push({
-                    _id: s._id,
-                    id: s.id,
-                    userId: s.userId,
-                    sponsorType: s.sponsorType,
-                    amount: s.amount,
-                    donationAmount: s.donationAmount,
-                    donation: s.donation,
-                    description: s.description,
-                    approvedStatus: s.approvedStatus,
-                    createdAt: s.createdAt,
-                    updatedAt: s.updatedAt
-                });
-            });
-            if forEachResult is error {
-                // leave sponsorsDetailed empty on error
-            }
+        json[] sponsorsDetailedList = getApprovedSponsorsJson(eid);
+        if sponsorsDetailedList.length() > 0 {
+            eventMap["sponsors"] = sponsorsDetailedList;
         }
-        eventDataMap["sponsor"] = sponsorsDetailed;
-        eventData = eventDataMap;
 
-        eventList.push(eventData);
+        eventList.push(eventMap);
     });
 
     check caller->respond(<http:Ok>{body: eventList});
@@ -799,94 +826,40 @@ public function getEvent(http:Caller caller, http:Request req, string eventId) r
         return utils:notFound(caller, "Event not found");
     }
 
-    // Fetch approved sponsors for this event (if any) and enrich response.
-    // We deliberately keep the original string[] sponsor field for backward compatibility
-    // and add a new "sponsors" field containing detailed sponsor records.
-    json[] sponsorsDetailed = [];
-    stream<record {|
-        string _id;
-        string id?;
-        string userId;
-        string eventId;
-        string sponsorType;
-        float? amount;
-        float? donationAmount;
-        string? donation;
-        string description;
-        string approvedStatus;
-        string createdAt;
-        string updatedAt;
-    |}, error?>|error sponsorStream = sponsorCollection->find({"eventId": eventId, "approvedStatus": "APPROVED"});
-    if sponsorStream is stream<record {|
-        string _id;
-        string id?;
-        string userId;
-        string eventId;
-        string sponsorType;
-        float? amount;
-        float? donationAmount;
-        string? donation;
-        string description;
-        string approvedStatus;
-        string createdAt;
-        string updatedAt;
-    |}, error?> {
-        check sponsorStream.forEach(function(record {|
-                    string _id;
-                    string id?;
-                    string userId;
-                    string eventId;
-                    string sponsorType;
-                    float? amount;
-                    float? donationAmount;
-                    string? donation;
-                    string description;
-                    string approvedStatus;
-                    string createdAt;
-                    string updatedAt;
-                |} s) {
-            sponsorsDetailed.push({
-                _id: s._id,
-                id: s.id,
-                userId: s.userId,
-                sponsorType: s.sponsorType,
-                amount: s.amount,
-                donationAmount: s.donationAmount,
-                donation: s.donation,
-                description: s.description,
-                approvedStatus: s.approvedStatus,
-                createdAt: s.createdAt,
-                updatedAt: s.updatedAt
+    json[] sponsorsDetailed = getApprovedSponsorsJson(eventId);
+    json eventJson = event;
+    map<json> eventMap = toPlainJsonMap(eventJson);
+    if sponsorsDetailed.length() > 0 {
+        eventMap["sponsors"] = sponsorsDetailed;
+    }
+    // Add participantCount for single event response
+    int|error participantCount = participantCollection->countDocuments({"eventId": eventId});
+    eventMap["participantCount"] = participantCount is int ? participantCount : 0;
+
+    // If user is authenticated, add their participation status
+    string|error? authHeader = req.getHeader("Authorization");
+    if authHeader is string && authHeader.length() > 7 {
+        string tokenStr = authHeader.substring(7);
+        string|error userIdFromToken = token:extractUserId(tokenStr);
+        if userIdFromToken is string {
+            Participant|error|() userParticipation = participantCollection->findOne({
+                "eventId": eventId,
+                "userId": userIdFromToken
             });
-        });
+            if userParticipation is Participant {
+                eventMap["userApplicationStatus"] = {
+                    "hasApplied": true,
+                    "method": userParticipation.method,
+                    "isParticipated": userParticipation.isParticipated,
+                    "appliedAt": userParticipation.createdAt
+                };
+            } else {
+                eventMap["userApplicationStatus"] = {"hasApplied": false};
+            }
+        }
     }
 
-    map<json> eventJson = {
-        _id: event._id,
-        id: event.id,
-        createdAt: event.createdAt,
-        updatedAt: event.updatedAt,
-        date: event.date,
-        startTime: event.startTime,
-        endTime: event.endTime,
-        location: event.location,
-        city: event.city,
-        latitude: event.latitude is float ? event.latitude : (),
-        longitude: event.longitude is float ? event.longitude : (),
-        province: event.province is string ? event.province : (),
-        eventTitle: event.eventTitle,
-        eventType: event.eventType,
-        eventDescription: event.eventDescription,
-        createdBy: event.createdBy,
-        approvedBy: event.approvedBy,
-        status: event.status,
-        sponsor: sponsorsDetailed,
-        participant: event.participant,
-        reward: event.reward,
-        image_url: event.image_url
-    };
-
-    check caller->respond(<http:Ok>{body: eventJson});
+    check caller->respond(<http:Ok>{body: eventMap});
 }
 
 // Update event (only by creator or admin operator)
