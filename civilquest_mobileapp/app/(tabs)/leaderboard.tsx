@@ -20,7 +20,7 @@ import {
 import { useLeaderboard } from "../../hooks";
 import { globalStyles, COLORS, SPACING, LAYOUT } from "../../theme";
 import { LeaderboardEntry } from "../../types";
-import LocationPicker from "components/LocationPick";
+
 
 export default function LeaderboardScreen() {
   const {
@@ -195,7 +195,6 @@ export default function LeaderboardScreen() {
 
   return (
     <View style={globalStyles.container}>
-      <LocationPicker style={{ height: 600 }} />
       <FlatList
         data={leaderboard}
         renderItem={renderLeaderboardEntry}
