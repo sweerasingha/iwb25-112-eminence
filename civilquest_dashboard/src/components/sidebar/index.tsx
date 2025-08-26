@@ -44,19 +44,19 @@ const SideBar = () => {
       name: "Manage Operators",
       href: "/manage-admin-operators",
       icon: <FaFileInvoice />,
-      allowableRoles: [Roles.ADMIN, Roles.SUPER_ADMIN],
+      allowableRoles: [Roles.ADMIN],
     },
     {
       name: "Events",
       href: "/events",
       icon: <FaFileInvoice />,
-      allowableRoles: [Roles.ADMIN, Roles.ADMIN_OPERATOR],
+      allowableRoles: [Roles.ADMIN, Roles.ADMIN_OPERATOR, Roles.SUPER_ADMIN],
     },
     {
       name: "Sponsors",
       href: "/sponsors",
       icon: <FaFileInvoice />,
-      allowableRoles: [Roles.ADMIN, Roles.ADMIN_OPERATOR],
+      allowableRoles: [Roles.ADMIN, Roles.ADMIN_OPERATOR, Roles.SUPER_ADMIN],
     },
     {
       name: "User Management",
@@ -80,13 +80,13 @@ const SideBar = () => {
       name: "Analytics",
       href: "/analytics",
       icon: <FaChartBar />,
-      allowableRoles: [],
+      allowableRoles: [Roles.ADMIN, Roles.SUPER_ADMIN],
     },
     {
       name: "Audit & Monitoring",
       href: "/audit",
       icon: <FaClipboardList />,
-      allowableRoles: [],
+      allowableRoles: [Roles.ADMIN, Roles.SUPER_ADMIN],
     },
 
   ];

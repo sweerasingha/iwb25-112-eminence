@@ -2,6 +2,9 @@ export enum Roles {
   ADMIN = "ADMIN",
   ADMIN_OPERATOR = "ADMIN_OPERATOR",
   SUPER_ADMIN = "SUPER_ADMIN",
+  USER = "USER",
+  PREMIUM_PENDING = "PREMIUM_PENDING",
+  PREMIUM_USER = "PREMIUM_USER",
 }
 
 export interface User {
@@ -55,13 +58,16 @@ export interface Event {
   endTime: string;
   location: string;
   city: string;
+  province?: string;
+  latitude?: number | null;
+  longitude?: number | null;
   eventTitle: string;
   eventType: string;
   eventDescription: string;
   createdBy: string;
   approvedBy: string | null;
   status: string;
-  sponsor: string[];
+  sponsor: any[];
   participant: string[];
   reward: string;
   image_url: string;

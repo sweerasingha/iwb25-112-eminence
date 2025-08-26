@@ -94,10 +94,9 @@ function canManageEventInProvince(string adminEmail, string eventCity) returns b
     return isEventCityInProvince(eventCity, province);
 }
 
-// Helper function to check if a city belongs to a province
-function isEventCityInProvince(string city, string province) returns boolean {
-    // This is a simplified mapping. In a real system, this would be more comprehensive
-    map<string[]> provinceCities = {
+// Centralized province-city mapping for reuse
+public function getProvinceCityMapping() returns map<string[]> {
+    return {
         "Western": ["Colombo", "Gampaha", "Kalutara", "Negombo", "Mount Lavinia", "Moratuwa", "Dehiwala"],
         "Central": ["Kandy", "Matale", "Nuwara Eliya", "Dambulla", "Gampola"],
         "Southern": ["Galle", "Matara", "Hambantota", "Tangalle", "Hikkaduwa"],
@@ -108,12 +107,15 @@ function isEventCityInProvince(string city, string province) returns boolean {
         "Uva": ["Badulla", "Monaragala", "Bandarawela"],
         "Sabaragamuwa": ["Ratnapura", "Kegalle", "Balangoda"]
     };
+}
 
+// Helper function to check if a city belongs to a province
+function isEventCityInProvince(string city, string province) returns boolean {
+    map<string[]> provinceCities = getProvinceCityMapping();
     string[]? cities = provinceCities[province];
     if cities is () {
         return false;
     }
-
     foreach string validCity in cities {
         if normalize(city) == normalize(validCity) {
             return true;
@@ -132,6 +134,7 @@ public type Event record {|
     string? endTime;
     string location;
     string city;
+    string? province;
     float? latitude;
     float? longitude;
     string eventTitle;
@@ -144,6 +147,10 @@ public type Event record {|
     string[] participant = [];
     string reward;
     string image_url;
+|};
+
+public type RawDoc record {|
+    json...;
 |};
 
 final mongodb:Collection eventCollection;
@@ -239,6 +246,15 @@ public function createEvent(http:Caller caller, http:Request req) returns error?
         return;
     }
 
+    // Province/city presence and consistency
+    if !m.hasKey("province") {
+        return utils:badRequest(caller, "province is required");
+    }
+    string province = <string>m["province"];
+    if !isEventCityInProvince(<string>m["city"], province) {
+        return utils:badRequest(caller, "City does not belong to the selected province");
+    }
+
     // Image is optional: upload only if provided
     string imageUrl = "";
     if img.length() > 0 {
@@ -271,6 +287,7 @@ public function createEvent(http:Caller caller, http:Request req) returns error?
         endTime: (),
         location: <string>m["location"],
         city: <string>m["city"],
+        province: province,
         latitude: (),
         longitude: (),
         eventTitle: <string>m["eventTitle"],
@@ -287,6 +304,10 @@ public function createEvent(http:Caller caller, http:Request req) returns error?
 
     if m.hasKey("endTime") {
         evt.endTime = <string>m["endTime"];
+    }
+    // Require latitude and longitude
+    if !m.hasKey("latitude") || !m.hasKey("longitude") {
+        return utils:badRequest(caller, "latitude and longitude are required");
     }
     if m.hasKey("latitude") {
         float|error lat = float:fromString(m["latitude"].toString());
@@ -382,28 +403,64 @@ public function approveEvent(http:Caller caller, http:Request req, string eventI
         return utils:unauthorized(caller, "Invalid token");
     }
 
-    // Get event details first to check location-based permissions
-    Event|error|() event = eventCollection->findOne({"_id": eventId});
-    if event is error {
-        return utils:serverError(caller);
+    record {|anydata...;|}|error|() edoc = eventCollection->findOne({"_id": eventId});
+    if edoc is error {
+        return utils:serverError(caller, edoc.message());
     }
-    if event is () {
+    if edoc is () {
         return utils:notFound(caller, "Event not found");
     }
-
-    // Role-aware permission checks
-    boolean allowed = false;
-    // operatorRole is guaranteed string (error already handled)
-    if operatorRole == "SUPER_ADMIN" {
-        allowed = true; // Full access
-    } else if operatorRole == "ADMIN_OPERATOR" {
-        allowed = canManageEventInCity(<string>operatorEmail, event.city);
-    } else if operatorRole == "ADMIN" {
-        allowed = canManageEventInProvince(<string>operatorEmail, event.city);
+    record {|anydata...;|} ev = <record {|anydata...;|}>edoc;
+    string eventCity = "";
+    string createdBy = "";
+    string eventTitle = "";
+    anydata|() c1 = ev["city"];
+    if c1 is string {
+        eventCity = c1;
+    }
+    anydata|() cb = ev["createdBy"];
+    if cb is string {
+        createdBy = cb;
+    }
+    anydata|() et = ev["eventTitle"];
+    if et is string {
+        eventTitle = et;
+    }
+    if eventCity == "" {
+        return utils:badRequest(caller, "Event is missing a valid city");
     }
 
-    if !allowed {
-        return utils:forbidden(caller);
+    boolean cityKnown = false;
+    {
+        map<string[]> mapping = getProvinceCityMapping();
+        foreach var [_, cities] in mapping.entries() {
+            foreach string c in cities {
+                if normalize(c) == normalize(eventCity) {
+                    cityKnown = true;
+                    break;
+                }
+            }
+            if cityKnown {
+                break;
+            }
+        }
+    }
+    if !cityKnown {
+        return utils:badRequest(caller, "Invalid event city: " + eventCity);
+    }
+
+    if operatorRole == "SUPER_ADMIN" {
+        // Full access
+    } else if operatorRole == "ADMIN_OPERATOR" {
+        if !canManageEventInCity(<string>operatorEmail, eventCity) {
+            return utils:forbidden(caller, "You can only approve events in your city");
+        }
+    } else if operatorRole == "ADMIN" {
+        if !canManageEventInProvince(<string>operatorEmail, eventCity) {
+            return utils:forbidden(caller, "You can only approve events in your province");
+        }
+    } else {
+        return utils:forbidden(caller, "Your role cannot approve events");
     }
 
     string now = time:utcToString(time:utcNow());
@@ -417,35 +474,33 @@ public function approveEvent(http:Caller caller, http:Request req, string eventI
         return utils:notFound(caller, "Event not found");
     }
 
-    // Log audit trail and notify
-    // Audit log (non-blocking)
-    error? auditResult = audit:logEventApproval(<string>operatorEmail, eventId, approve);
-    if auditResult is error {
-        // Continue without failing; audit failure shouldn't break operation
-    }
-    error? notifyResult = notifications:notifyEventApproval(event.createdBy, event.eventTitle, approve);
-    if notifyResult is error {
-        // Log error but don't fail the operation
-    }
+    check caller->respond(<http:Ok>{body: {status}});
 
-    // Award approval bonus points when event is approved
-    if approve {
-        points:PointsConfig|error config = points:getCurrentPointsConfig();
-        if config is points:PointsConfig {
-            error? approvalPointsResult = points:awardPoints(
-                    event.createdBy,
+    error? auditRes = audit:logEventApproval(<string>operatorEmail, eventId, approve);
+    if auditRes is error {
+        // ignore
+    }
+    if createdBy != "" && eventTitle != "" {
+        error? notifyRes = notifications:notifyEventApproval(createdBy, eventTitle, approve);
+        if notifyRes is error {
+            // ignore
+        }
+    }
+    if approve && createdBy != "" {
+        points:PointsConfig|error cfg = points:getCurrentPointsConfig();
+        if cfg is points:PointsConfig {
+            error? pointsRes = points:awardPoints(
+                    createdBy,
                     points:BONUS_AWARD,
-                    config.eventApprovalBonusPoints,
-                    "Event approval bonus: " + event.eventTitle,
+                    cfg.eventApprovalBonusPoints,
+                    "Event approval bonus: " + eventTitle,
                     eventId = eventId
             );
-            if approvalPointsResult is error {
-                // Log but don't fail the operation
+            if pointsRes is error {
+                // ignore
             }
         }
     }
-
-    check caller->respond(<http:Ok>{body: {status}});
 }
 
 public function endEvent(http:Caller caller, http:Request req, string eventId) returns error? {
@@ -463,8 +518,8 @@ public function endEvent(http:Caller caller, http:Request req, string eventId) r
         return utils:unauthorized(caller, "Invalid token");
     }
 
-    // Check permissions: Admin Operators can end any event, Premium Users can end their own events, Admins can end any event
-    if role != "ADMIN_OPERATOR" && role != "PREMIUM_USER" && role != "ADMIN" {
+    // Check acceptable roles up-front
+    if role != "ADMIN_OPERATOR" && role != "PREMIUM_USER" && role != "ADMIN" && role != "SUPER_ADMIN" {
         return utils:forbidden(caller);
     }
 
@@ -477,10 +532,17 @@ public function endEvent(http:Caller caller, http:Request req, string eventId) r
         return utils:notFound(caller, "Event not found");
     }
 
-    // If Premium User, check if they created the event
     if role == "PREMIUM_USER" {
         if event.createdBy != userId {
             return utils:forbidden(caller, "Can only end events you created");
+        }
+    } else if role == "ADMIN_OPERATOR" {
+        if !canManageEventInCity(<string>userId, event.city) {
+            return utils:forbidden(caller, "You can only end events in your city");
+        }
+    } else if role == "ADMIN" {
+        if !canManageEventInProvince(<string>userId, event.city) {
+            return utils:forbidden(caller, "You can only end events in your province");
         }
     }
 
@@ -493,47 +555,40 @@ public function endEvent(http:Caller caller, http:Request req, string eventId) r
         return utils:notFound(caller, "Event not found");
     }
 
-    // Award completion bonus points to event creator and participants
-    points:PointsConfig|error config = points:getCurrentPointsConfig();
-    if config is points:PointsConfig {
-        // Award completion bonus to event creator
-        error? creatorBonusResult = points:awardPoints(
+    check caller->respond(<http:Ok>{body: {status: "ENDED"}});
+
+    points:PointsConfig|error _cfg = points:getCurrentPointsConfig();
+    if _cfg is points:PointsConfig {
+        error? _creator = points:awardPoints(
                 event.createdBy,
                 points:EVENT_COMPLETION,
-                config.eventCompletionBonusPoints,
+                _cfg.eventCompletionBonusPoints,
                 "Event completion bonus: " + event.eventTitle,
                 eventId = eventId
         );
-        if creatorBonusResult is error {
-            // Log but don't fail the operation
+        if _creator is error {
+            // ignore
         }
-
-        // Award completion bonus to all participants who actually participated
+        // Award to participants
         if event.participant.length() > 0 {
             foreach string participantEmail in event.participant {
-                error? participantBonusResult = points:awardPoints(
+                error? _p = points:awardPoints(
                         participantEmail,
                         points:EVENT_COMPLETION,
-                        config.eventCompletionBonusPoints / 2, // Half bonus for participants
+                        _cfg.eventCompletionBonusPoints / 2,
                         "Event completion participation bonus: " + event.eventTitle,
                         eventId = eventId
                 );
-                // Intentionally not checking participantBonusResult - points are optional
-                if participantBonusResult is error {
-                    // Log but don't fail the operation
+                if _p is error {
+                    // ignore
                 }
             }
         }
-        // Intentionally not checking creatorBonusResult - points are optional
     }
-
-    // Send completion notification to event creator
-    error? notifyResult = notifications:notifyEventCompleted(event.createdBy, event.eventTitle);
-    if notifyResult is error {
-        // Log error but don't fail the operation
+    error? _n = notifications:notifyEventCompleted(event.createdBy, event.eventTitle);
+    if _n is error {
+        // ignore
     }
-
-    check caller->respond(<http:Ok>{body: {status: "ENDED"}});
 }
 
 // Get all events with optional filtering
@@ -581,39 +636,64 @@ public function getEvents(http:Caller caller, http:Request req) returns error? {
         }
     }
 
-    stream<Event, error?>|error events = eventCollection->find(filter);
+    stream<RawDoc, error?>|error events = eventCollection->find(filter);
     if events is error {
         return utils:serverError(caller);
     }
 
     json[] eventList = [];
-    check events.forEach(function(Event event) {
+    check events.forEach(function(RawDoc rawDoc) {
+        map<json> doc = rawDoc;
+        string eid = doc.hasKey("_id") && doc["_id"] is string ? <string>doc["_id"] : doc["_id"].toString();
+        string id = doc.hasKey("id") && doc["id"] is string ? <string>doc["id"] : eid;
+        string createdAt = doc.hasKey("createdAt") && doc["createdAt"] is string ? <string>doc["createdAt"] : doc["createdAt"].toString();
+        string updatedAt = doc.hasKey("updatedAt") && doc["updatedAt"] is string ? <string>doc["updatedAt"] : doc["updatedAt"].toString();
+        string date = doc.hasKey("date") && doc["date"] is string ? <string>doc["date"] : doc["date"].toString();
+        string startTime = doc.hasKey("startTime") && doc["startTime"] is string ? <string>doc["startTime"] : doc["startTime"].toString();
+        json endTime = doc.hasKey("endTime") ? doc["endTime"] : ();
+        string location = doc.hasKey("location") && doc["location"] is string ? <string>doc["location"] : doc["location"].toString();
+        string city = doc.hasKey("city") && doc["city"] is string ? <string>doc["city"] : doc["city"].toString();
+        json provinceJ = doc.hasKey("province") ? doc["province"] : ();
+        json latitudeJ = doc.hasKey("latitude") ? doc["latitude"] : ();
+        json longitudeJ = doc.hasKey("longitude") ? doc["longitude"] : ();
+        string eventTitle = doc.hasKey("eventTitle") && doc["eventTitle"] is string ? <string>doc["eventTitle"] : doc["eventTitle"].toString();
+        string eventType = doc.hasKey("eventType") && doc["eventType"] is string ? <string>doc["eventType"] : doc["eventType"].toString();
+        string eventDescription = doc.hasKey("eventDescription") && doc["eventDescription"] is string ? <string>doc["eventDescription"] : doc["eventDescription"].toString();
+        string createdBy = doc.hasKey("createdBy") && doc["createdBy"] is string ? <string>doc["createdBy"] : doc["createdBy"].toString();
+        json approvedBy = doc.hasKey("approvedBy") ? doc["approvedBy"] : ();
+        string status = doc.hasKey("status") && doc["status"] is string ? <string>doc["status"] : doc["status"].toString();
+        json sponsor = doc.hasKey("sponsor") ? doc["sponsor"] : [];
+        json participant = doc.hasKey("participant") ? doc["participant"] : [];
+        string reward = doc.hasKey("reward") && doc["reward"] is string ? <string>doc["reward"] : doc["reward"].toString();
+        string imageUrl = doc.hasKey("image_url") && doc["image_url"] is string ? <string>doc["image_url"] : doc["image_url"].toString();
+
         // Get actual participant count from participant collection for accuracy
-        int|error participantCount = participantCollection->countDocuments({"eventId": event._id});
+        int|error participantCount = participantCollection->countDocuments({"eventId": eid});
         int actualParticipantCount = participantCount is int ? participantCount : 0;
 
         json eventData = {
-            "_id": event._id,
-            "id": event.id,
-            "createdAt": event.createdAt,
-            "updatedAt": event.updatedAt,
-            "date": event.date,
-            "startTime": event.startTime,
-            "endTime": event.endTime,
-            "location": event.location,
-            "city": event.city,
-            "latitude": event.latitude,
-            "longitude": event.longitude,
-            "eventTitle": event.eventTitle,
-            "eventType": event.eventType,
-            "eventDescription": event.eventDescription,
-            "createdBy": event.createdBy,
-            "approvedBy": event.approvedBy,
-            "status": event.status,
-            "sponsor": event.sponsor,
-            "participant": event.participant,
-            "reward": event.reward,
-            "image_url": event.image_url,
+            "_id": eid,
+            "id": id,
+            "createdAt": createdAt,
+            "updatedAt": updatedAt,
+            "date": date,
+            "startTime": startTime,
+            "endTime": endTime,
+            "location": location,
+            "city": city,
+            "latitude": latitudeJ,
+            "longitude": longitudeJ,
+            "province": provinceJ,
+            "eventTitle": eventTitle,
+            "eventType": eventType,
+            "eventDescription": eventDescription,
+            "createdBy": createdBy,
+            "approvedBy": approvedBy,
+            "status": status,
+            "sponsor": sponsor,
+            "participant": participant,
+            "reward": reward,
+            "image_url": imageUrl,
             "participantCount": actualParticipantCount
         };
 
@@ -622,7 +702,7 @@ public function getEvents(http:Caller caller, http:Request req) returns error? {
         // If user is authenticated, check their application status
         if currentUserId is string {
             Participant|error|() userParticipation = participantCollection->findOne({
-                "eventId": event._id,
+                "eventId": eid,
                 "userId": currentUserId
             });
 
@@ -653,7 +733,7 @@ public function getEvents(http:Caller caller, http:Request req) returns error? {
             string approvedStatus;
             string createdAt;
             string updatedAt;
-        |}, error?>|error sponsorStream = sponsorCollection->find({"eventId": event._id, "approvedStatus": "APPROVED"});
+        |}, error?>|error sponsorStream = sponsorCollection->find({"eventId": eid, "approvedStatus": "APPROVED"});
         if sponsorStream is stream<record {|
             string _id;
             string id?;
@@ -791,8 +871,9 @@ public function getEvent(http:Caller caller, http:Request req, string eventId) r
         endTime: event.endTime,
         location: event.location,
         city: event.city,
-        latitude: event.latitude,
-        longitude: event.longitude,
+        latitude: event.latitude is float ? event.latitude : (),
+        longitude: event.longitude is float ? event.longitude : (),
+        province: event.province is string ? event.province : (),
         eventTitle: event.eventTitle,
         eventType: event.eventType,
         eventDescription: event.eventDescription,
@@ -829,18 +910,59 @@ public function updateEvent(http:Caller caller, http:Request req, string eventId
         return utils:unauthorized(caller, "Invalid token");
     }
 
-    // Check if event exists and get creator info
-    Event|error|() event = eventCollection->findOne({"_id": eventId});
-    if event is error {
+    // Check if event exists and get creator/city info (permissive mapping to avoid conversion errors)
+    record {|anydata...;|}|error|() edoc = eventCollection->findOne({"_id": eventId});
+    if edoc is error {
         return utils:serverError(caller);
     }
-    if event is () {
+    if edoc is () {
         return utils:notFound(caller, "Event not found");
     }
+    record {|anydata...;|} ev = <record {|anydata...;|}>edoc;
+    string evCity = "";
+    string evProvince = "";
+    string evCreatedBy = "";
+    string evStartTime = "";
+    string evStatus = "";
+    anydata|() c1 = ev["city"];
+    if c1 is string {
+        evCity = c1;
+    }
+    anydata|() p1 = ev["province"];
+    if p1 is string {
+        evProvince = p1;
+    }
+    anydata|() cb = ev["createdBy"];
+    if cb is string {
+        evCreatedBy = cb;
+    }
+    anydata|() st0 = ev["startTime"];
+    if st0 is string {
+        evStartTime = st0;
+    }
+    anydata|() st = ev["status"];
+    if st is string {
+        evStatus = st;
+    }
 
-    // Check permissions: Admin Operators and Admins can update any event, creators can update their own
-    if role != "ADMIN_OPERATOR" && role != "ADMIN" && event.createdBy != userId {
-        return utils:forbidden(caller, "Can only update events you created");
+    // Disallow editing approved events for all roles
+    if evStatus == "APPROVED" {
+        return utils:forbidden(caller, "Approved events cannot be edited");
+    }
+
+    // Check permissions: SUPER_ADMIN any; ADMIN within province; ADMIN_OPERATOR within city; creators can update own
+    boolean updateAllowed = false;
+    if role == "SUPER_ADMIN" {
+        updateAllowed = true;
+    } else if role == "ADMIN_OPERATOR" {
+        updateAllowed = canManageEventInCity(<string>userId, evCity);
+    } else if role == "ADMIN" {
+        updateAllowed = canManageEventInProvince(<string>userId, evCity);
+    } else if evCreatedBy == userId {
+        updateAllowed = true;
+    }
+    if !updateAllowed {
+        return utils:forbidden(caller);
     }
 
     map<json> m = <map<json>>body;
@@ -858,6 +980,16 @@ public function updateEvent(http:Caller caller, http:Request req, string eventId
     }
     if m.hasKey("city") {
         updateData["city"] = m["city"];
+    }
+    if m.hasKey("province") {
+        updateData["province"] = m["province"];
+    }
+    if m.hasKey("city") || m.hasKey("province") {
+        string newCity = m.hasKey("city") ? m["city"].toString() : evCity;
+        string newProvince = m.hasKey("province") ? m["province"].toString() : evProvince;
+        if newProvince != "" && !isEventCityInProvince(newCity, newProvince) {
+            return utils:badRequest(caller, "City does not belong to selected province");
+        }
     }
     if m.hasKey("latitude") {
         float|error lat = float:fromString(m["latitude"].toString());
@@ -891,11 +1023,11 @@ public function updateEvent(http:Caller caller, http:Request req, string eventId
         }
     }
     if m.hasKey("startTime") {
-        string st = m["startTime"].toString();
-        if !utils:validateTimeFormat(st) {
+        string stStart = m["startTime"].toString();
+        if !utils:validateTimeFormat(stStart) {
             return utils:badRequest(caller, "Invalid startTime format");
         }
-        updateData["startTime"] = st;
+        updateData["startTime"] = stStart;
     }
     if m.hasKey("endTime") {
         string et = m["endTime"].toString();
@@ -903,7 +1035,7 @@ public function updateEvent(http:Caller caller, http:Request req, string eventId
             return utils:badRequest(caller, "Invalid endTime format");
         }
         // If startTime is not provided, read existing to validate order
-        string startToCompare = m.hasKey("startTime") ? m["startTime"].toString() : event.startTime;
+        string startToCompare = m.hasKey("startTime") ? m["startTime"].toString() : evStartTime;
         boolean|error timeOrderOk = utils:validateTimeOrder(startToCompare, et);
         if timeOrderOk is boolean && timeOrderOk {
             updateData["endTime"] = et;
@@ -911,15 +1043,21 @@ public function updateEvent(http:Caller caller, http:Request req, string eventId
             return utils:badRequest(caller, "endTime must be after startTime");
         }
     }
+    if m.hasKey("eventType") {
+        updateData["eventType"] = m["eventType"];
+    }
     if m.hasKey("reward") {
         updateData["reward"] = m["reward"];
     }
 
+    if updateData.length() == 0 {
+        return utils:badRequest(caller, "No fields to update");
+    }
     updateData["updatedAt"] = time:utcToString(time:utcNow());
 
     mongodb:UpdateResult|error ur = eventCollection->updateOne({"_id": eventId}, {"set": updateData});
     if ur is error {
-        return utils:serverError(caller);
+        return utils:serverError(caller, ur.message());
     }
     if ur.matchedCount == 0 {
         return utils:notFound(caller, "Event not found");
@@ -938,23 +1076,31 @@ public function deleteEvent(http:Caller caller, http:Request req, string eventId
 
     string tokenStr = (<string>authHeader).substring(7);
     string|error role = token:extractRole(tokenStr);
+    string|error userId = token:extractUserId(tokenStr);
 
-    if role is error {
+    if role is error || userId is error {
         return utils:unauthorized(caller, "Invalid token");
     }
 
-    // Only ADMIN and ADMIN_OPERATOR can delete events
-    if role != "ADMIN" && role != "ADMIN_OPERATOR" {
-        return utils:forbidden(caller);
-    }
-
-    // Get event details before deletion to update user's organizeEventId array
     Event|error|() event = eventCollection->findOne({"_id": eventId});
     if event is error {
         return utils:serverError(caller);
     }
     if event is () {
         return utils:notFound(caller, "Event not found");
+    }
+
+    if role != "ADMIN" && role != "ADMIN_OPERATOR" && role != "SUPER_ADMIN" {
+        return utils:forbidden(caller);
+    }
+    if role == "ADMIN_OPERATOR" {
+        if !canManageEventInCity(<string>userId, event.city) {
+            return utils:forbidden(caller, "You can only delete events in your city");
+        }
+    } else if role == "ADMIN" {
+        if !canManageEventInProvince(<string>userId, event.city) {
+            return utils:forbidden(caller, "You can only delete events in your province");
+        }
     }
 
     // Delete related participants and sponsors first for cascade cleanup

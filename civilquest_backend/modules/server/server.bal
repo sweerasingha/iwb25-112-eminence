@@ -22,7 +22,12 @@ public listener http:Listener httpListener = new (server_port);
 
 @http:ServiceConfig {
     cors: {
-        allowOrigins: ["http://localhost:3000", "http://localhost:3001"],
+        allowOrigins: [
+            "http://localhost:3000",
+            "http://localhost:3001",
+            "http://127.0.0.1:3000",
+            "http://127.0.0.1:3001"
+        ],
         allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         allowHeaders: ["Content-Type", "Authorization", "Accept", "Origin", "X-Requested-With"],
         allowCredentials: true,
@@ -151,13 +156,13 @@ service /api on httpListener {
 
     resource function put events/[string eventId]/approve(http:Caller caller, http:Request req) returns error? {
         check middleware:tokenValidation(caller, req);
-        check middleware:assertAnyRole(caller, req, ["ADMIN", "ADMIN_OPERATOR"]);
+        check middleware:assertAnyRole(caller, req, ["ADMIN", "ADMIN_OPERATOR", "SUPER_ADMIN"]);
         check events:approveEvent(caller, req, eventId, true);
     }
 
     resource function put events/[string eventId]/reject(http:Caller caller, http:Request req) returns error? {
         check middleware:tokenValidation(caller, req);
-        check middleware:assertAnyRole(caller, req, ["ADMIN", "ADMIN_OPERATOR"]);
+        check middleware:assertAnyRole(caller, req, ["ADMIN", "ADMIN_OPERATOR", "SUPER_ADMIN"]);
         check events:approveEvent(caller, req, eventId, false);
     }
 
@@ -205,6 +210,12 @@ service /api on httpListener {
     // Event Management
     resource function get events(http:Caller caller, http:Request req) returns error? {
         check events:getEvents(caller, req);
+    }
+
+    // Provinces and cities mapping
+    resource function get provinces(http:Caller caller, http:Request req) returns error? {
+        map<string[]> mapping = events:getProvinceCityMapping();
+        check caller->respond(<http:Ok>{body: mapping});
     }
 
     resource function get events/[string eventId](http:Caller caller, http:Request req) returns error? {
@@ -315,7 +326,7 @@ service /api on httpListener {
     // Admin event management (for Admins to manage events) - CRUD operations
     resource function get admin/events(http:Caller caller, http:Request req) returns error? {
         check middleware:tokenValidation(caller, req);
-        check middleware:assertAnyRole(caller, req, ["ADMIN"]);
+        check middleware:assertAnyRole(caller, req, ["ADMIN", "SUPER_ADMIN", "ADMIN_OPERATOR"]);
         check events:getEvents(caller, req);
     }
 
@@ -326,7 +337,7 @@ service /api on httpListener {
 
     resource function delete events/[string eventId](http:Caller caller, http:Request req) returns error? {
         check middleware:tokenValidation(caller, req);
-        check middleware:assertAnyRole(caller, req, ["ADMIN", "ADMIN_OPERATOR"]);
+        check middleware:assertAnyRole(caller, req, ["ADMIN", "ADMIN_OPERATOR", "SUPER_ADMIN"]);
         check events:deleteEvent(caller, req, eventId);
     }
 

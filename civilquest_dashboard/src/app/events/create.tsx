@@ -1,12 +1,14 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import z from "zod";
 import LoadingButton from "../../components/ui/button/index";
 
 import { ApiResponse } from "@/types";
 import { useForm } from "@/hooks/useForm";
 import { InputField } from "@/components/ui/input";
+import { ComboBox } from "@/components/ui/comboBox";
+import { getProvinces, ProvinceCityMap } from "@/services/provinces";
 
 import {
   createApiCompliantFormData,
@@ -22,6 +24,21 @@ const editEvent = z.object({
   endTime: z.string().min(1, "End time is required"),
   location: z.string().min(1, "Location is required"),
   city: z.string().min(1, "City is required"),
+  province: z.string().min(1, "Province is required"),
+  latitude: z
+    .string()
+    .min(1, "Latitude is required")
+    .refine((v) => {
+      const n = parseFloat(v);
+      return !Number.isNaN(n) && n >= -90 && n <= 90;
+    }, { message: "Latitude must be between -90 and 90" }),
+  longitude: z
+    .string()
+    .min(1, "Longitude is required")
+    .refine((v) => {
+      const n = parseFloat(v);
+      return !Number.isNaN(n) && n >= -180 && n <= 180;
+    }, { message: "Longitude must be between -180 and 180" }),
   eventTitle: z.string().min(1, "Event title is required"),
   eventDescription: z
     .string()
@@ -31,16 +48,31 @@ const editEvent = z.object({
   image: z.any().optional(), 
 });
 
+const EVENT_TYPES = [
+  "Environmental",
+  "Community Service",
+  "Education",
+  "Health & Wellness",
+  "Sports",
+  "Arts & Culture",
+  "Fundraising",
+  "Other",
+] as const;
+
 const Create = ({ useEventHook, handleClose }: CreateProps) => {
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
+  const [provinceMap, setProvinceMap] = useState<ProvinceCityMap>({});
 
-  const { formData, handleChange, errors, validate } = useForm(
+  const { formData, handleChange, errors, validate, setFormData } = useForm(
     {
       date: "",
       startTime: "",
       endTime: "",
       location: "",
       city: "",
+      province: "",
+      latitude: "",
+      longitude: "",
       eventTitle: "",
       eventDescription: "",
       eventType: "Environmental",
@@ -49,6 +81,21 @@ const Create = ({ useEventHook, handleClose }: CreateProps) => {
     },
     editEvent
   );
+
+  useEffect(() => {
+    getProvinces()
+      .then((m) => setProvinceMap(m))
+      .catch(() => setProvinceMap({}));
+  }, []);
+
+  const provinceOptions = useMemo(
+    () => Object.keys(provinceMap).map((p) => ({ name: p, value: p })),
+    [provinceMap]
+  );
+  const cityOptions = useMemo(() => {
+    const cities = provinceMap[formData.province] || [];
+    return cities.map((c) => ({ name: c, value: c }));
+  }, [provinceMap, formData.province]);
 
   const handleSubmit = async () => {
     let result: ApiResponse;
@@ -115,12 +162,25 @@ const Create = ({ useEventHook, handleClose }: CreateProps) => {
         error={errors.location}
       />
 
-      <InputField
+      <ComboBox
+        name={"province"}
+        label={"Province"}
+        value={formData.province}
+        onChange={(e) => {
+          // reset city when province changes
+          handleChange(e as any);
+          setFormData((prev: any) => ({ ...prev, city: "" }));
+        }}
+        options={provinceOptions}
+        error={errors.province as string}
+      />
+      <ComboBox
         name={"city"}
         label={"City"}
         value={formData.city}
-        onChange={handleChange}
-        error={errors.city}
+        onChange={handleChange as any}
+        options={cityOptions}
+        error={errors.city as string}
       />
 
       <InputField
@@ -130,12 +190,29 @@ const Create = ({ useEventHook, handleClose }: CreateProps) => {
         onChange={handleChange}
         error={errors.eventTitle}
       />
-      <InputField
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <InputField
+          name={"latitude"}
+          label={"Latitude"}
+          value={formData.latitude}
+          onChange={handleChange}
+          error={errors.latitude}
+        />
+        <InputField
+          name={"longitude"}
+          label={"Longitude"}
+          value={formData.longitude}
+          onChange={handleChange}
+          error={errors.longitude}
+        />
+      </div>
+      <ComboBox
         name={"eventType"}
         label={"Event Type"}
         value={formData.eventType}
-        onChange={handleChange}
-        error={errors.eventType}
+        onChange={handleChange as any}
+        options={EVENT_TYPES.map((t) => ({ name: t, value: t }))}
+        error={errors.eventType as string}
       />
       <InputField
         name={"eventDescription"}

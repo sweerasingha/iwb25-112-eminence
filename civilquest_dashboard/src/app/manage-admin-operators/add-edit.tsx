@@ -23,11 +23,25 @@ const CreateAdminOperatorSchema = z.object({
   city: z.string().min(2, "city must be at least 2 characters long"),
 });
 
+const UpdateAdminOperatorSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Invalid email format"),
+  password: z.string().optional().or(z.literal("")),
+  phoneNumber: z
+    .string()
+    .min(10, "Phone number must be at least 10 characters long"),
+  city: z.string().optional().or(z.literal("")),
+});
+
 const AddEdit = ({
   selectedAdminOperator,
   useAdminOperatorHook,
   handleClose,
 }: AddEditProps) => {
+  const schema = selectedAdminOperator
+    ? UpdateAdminOperatorSchema
+    : CreateAdminOperatorSchema;
+
   const { formData, handleChange, errors, validate } = useForm(
     {
       name: selectedAdminOperator?.name || "",
@@ -36,36 +50,35 @@ const AddEdit = ({
       phoneNumber: selectedAdminOperator?.phoneNumber || "",
       city: selectedAdminOperator?.city || "",
     },
-    CreateAdminOperatorSchema
+    schema
   );
 
   const handleSubmit = async () => {
     let result: ApiResponse;
     if (validate()) {
-      if (selectedAdminOperator) {
+    if (selectedAdminOperator) {
         const updatedAdminOperator: AdminOperator = {
           _id: selectedAdminOperator._id,
           name: formData.name,
-          email: formData.email,
-          password: formData.password,
+      email: selectedAdminOperator.email,
+      password: selectedAdminOperator.password as any,
           phoneNumber: formData.phoneNumber,
-          city: formData.city,
+      city: selectedAdminOperator.city,
         };
         result =
           await useAdminOperatorHook.updateAdminOperator(updatedAdminOperator);
       } else {
         const createAdminOperator: AdminOperator = {
           name: formData.name,
-          email: formData.email,
-          password: formData.password,
+          email: formData.email as string,
+          password: formData.password as string,
           phoneNumber: formData.phoneNumber,
-          city: formData.city,
+          city: formData.city as string,
         };
         result =
           await useAdminOperatorHook.createAdminOperator(createAdminOperator);
       }
       if (result.status) {
-        await useAdminOperatorHook.fetchAdminOperators();
         handleClose();
       }
     }
@@ -79,22 +92,27 @@ const AddEdit = ({
         onChange={handleChange}
         error={errors.name}
       />
-      <InputField
-        name={"email"}
-        label={"Email"}
-        type={"email"}
-        value={formData.email}
-        onChange={handleChange}
-        error={errors.email}
-      />
-      <InputField
-        name={"password"}
-        label={"Password"}
-        type={"password"}
-        value={formData.password}
-        onChange={handleChange}
-        error={errors.password}
-      />
+      {!selectedAdminOperator && (
+        <>
+          <InputField
+            name={"email"}
+            label={"Email"}
+            type={"email"}
+            value={formData.email}
+            onChange={handleChange}
+            error={errors.email}
+          />
+          <InputField
+            name={"password"}
+            label={"Password"}
+            type={"password"}
+            value={formData.password}
+            onChange={handleChange}
+            showToggle
+            error={errors.password}
+          />
+        </>
+      )}
       <InputField
         name={"phoneNumber"}
         label={"Phone Number"}
@@ -102,13 +120,15 @@ const AddEdit = ({
         onChange={handleChange}
         error={errors.phoneNumber}
       />
-      <InputField
-        name={"city"}
-        label={"City"}
-        value={formData.city}
-        onChange={handleChange}
-        error={errors.city}
-      />
+      {!selectedAdminOperator && (
+        <InputField
+          name={"city"}
+          label={"City"}
+          value={formData.city}
+          onChange={handleChange}
+          error={errors.city}
+        />
+      )}
 
       <LoadingButton
         onClick={async () => {
