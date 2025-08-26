@@ -26,7 +26,7 @@ import { CreateEventRequest, EventLocation } from "../../types";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as ImagePicker from "expo-image-picker";
-import GetSelectedLocation from "components/GetSelectedLocation";
+import { GetSelectedLocation } from "../../components";
 
 const { width } = Dimensions.get("window");
 
@@ -88,7 +88,8 @@ export default function CreateEventScreen() {
     if (!eventTitle.trim()) newErrors.eventTitle = "Event title is required";
     if (!eventDescription.trim())
       newErrors.eventDescription = "Event description is required";
-    if (!location?.displayName.trim()) newErrors.location = "Location is required";
+    if (!location?.displayName.trim())
+      newErrors.location = "Location is required";
     if (!city.trim()) newErrors.city = "City is required";
     if (!eventType.trim()) newErrors.eventType = "Event type is required";
     if (!reward.trim()) newErrors.reward = "Reward is required";
@@ -539,7 +540,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
-  // Image Picker Styles
   imageSection: {
     marginBottom: SPACING.lg,
   },

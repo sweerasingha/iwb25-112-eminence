@@ -7,11 +7,10 @@ import {
   StyleSheet,
   Modal,
   FlatList,
- 
 } from "react-native";
-import { Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
-import { globalStyles, COLORS, SPACING, LAYOUT, FONTS } from "../theme";
+import { Ionicons } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
+import { globalStyles, COLORS, SPACING, LAYOUT, FONTS } from "../../theme";
 
 interface SearchAndFilterProps {
   searchValue: string;
@@ -62,8 +61,8 @@ export const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
   }) => (
     <Modal visible={visible} animationType="slide" transparent={true}>
       <BlurView intensity={20} style={styles.modalOverlay}>
-        <TouchableOpacity 
-          style={styles.modalBackdrop} 
+        <TouchableOpacity
+          style={styles.modalBackdrop}
           onPress={onClose}
           activeOpacity={1}
         />
@@ -77,13 +76,17 @@ export const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
               <Ionicons name="close" size={24} color={COLORS.textSecondary} />
             </TouchableOpacity>
           </View>
-          
+
           <FlatList
             data={[
-              { value: "", label: `All ${title}`, isAll: true }, 
-              ...data.map(item => ({ value: item, label: item, isAll: false }))
+              { value: "", label: `All ${title}`, isAll: true },
+              ...data.map((item) => ({
+                value: item,
+                label: item,
+                isAll: false,
+              })),
             ]}
-            keyExtractor={(item) => item.value || 'all'}
+            keyExtractor={(item) => item.value || "all"}
             renderItem={({ item }) => (
               <TouchableOpacity
                 style={[
@@ -100,14 +103,19 @@ export const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
                   <Text
                     style={[
                       styles.modalItemText,
-                      selectedValue === item.value && styles.modalItemTextSelected,
+                      selectedValue === item.value &&
+                        styles.modalItemTextSelected,
                       item.isAll && styles.modalItemTextAll,
                     ]}
                   >
                     {item.label}
                   </Text>
                   {selectedValue === item.value && (
-                    <Ionicons name="checkmark" size={20} color={COLORS.primary} />
+                    <Ionicons
+                      name="checkmark"
+                      size={20}
+                      color={COLORS.primary}
+                    />
                   )}
                 </View>
               </TouchableOpacity>
@@ -122,10 +130,12 @@ export const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
   return (
     <View style={styles.container}>
       {/* Search Bar */}
-      <View style={[
-        styles.searchContainer,
-        isFocused && styles.searchContainerFocused,
-      ]}>
+      <View
+        style={[
+          styles.searchContainer,
+          isFocused && styles.searchContainerFocused,
+        ]}
+      >
         <Ionicons name="search" size={20} color={COLORS.textTertiary} />
         <TextInput
           style={styles.searchInput}
@@ -137,11 +147,15 @@ export const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
           onBlur={() => setIsFocused(false)}
         />
         {searchValue.length > 0 && (
-          <TouchableOpacity 
-            onPress={() => onSearchChange('')}
+          <TouchableOpacity
+            onPress={() => onSearchChange("")}
             style={styles.clearSearchButton}
           >
-            <Ionicons name="close-circle" size={20} color={COLORS.textTertiary} />
+            <Ionicons
+              name="close-circle"
+              size={20}
+              color={COLORS.textTertiary}
+            />
           </TouchableOpacity>
         )}
       </View>
@@ -157,10 +171,10 @@ export const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
             onPress={() => setShowCityModal(true)}
             activeOpacity={0.8}
           >
-            <Ionicons 
-              name="location" 
-              size={16} 
-              color={selectedCity ? COLORS.white : COLORS.textSecondary} 
+            <Ionicons
+              name="location"
+              size={16}
+              color={selectedCity ? COLORS.white : COLORS.textSecondary}
             />
             <Text
               style={[
@@ -170,10 +184,10 @@ export const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
             >
               {selectedCity || "City"}
             </Text>
-            <Ionicons 
-              name="chevron-down" 
-              size={16} 
-              color={selectedCity ? COLORS.white : COLORS.textSecondary} 
+            <Ionicons
+              name="chevron-down"
+              size={16}
+              color={selectedCity ? COLORS.white : COLORS.textSecondary}
             />
           </TouchableOpacity>
 
@@ -185,10 +199,10 @@ export const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
             onPress={() => setShowTypeModal(true)}
             activeOpacity={0.8}
           >
-            <Ionicons 
-              name="pricetag" 
-              size={16} 
-              color={selectedType ? COLORS.white : COLORS.textSecondary} 
+            <Ionicons
+              name="pricetag"
+              size={16}
+              color={selectedType ? COLORS.white : COLORS.textSecondary}
             />
             <Text
               style={[
@@ -198,10 +212,10 @@ export const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
             >
               {selectedType || "Type"}
             </Text>
-            <Ionicons 
-              name="chevron-down" 
-              size={16} 
-              color={selectedType ? COLORS.white : COLORS.textSecondary} 
+            <Ionicons
+              name="chevron-down"
+              size={16}
+              color={selectedType ? COLORS.white : COLORS.textSecondary}
             />
           </TouchableOpacity>
         </View>
@@ -213,7 +227,9 @@ export const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
             activeOpacity={0.8}
           >
             <Ionicons name="refresh" size={16} color={COLORS.white} />
-            <Text style={styles.clearButtonText}>Clear ({activeFiltersCount})</Text>
+            <Text style={styles.clearButtonText}>
+              Clear ({activeFiltersCount})
+            </Text>
           </TouchableOpacity>
         )}
       </View>
@@ -246,7 +262,7 @@ const styles = StyleSheet.create({
   container: {
     gap: SPACING.lg,
   },
-  
+
   // Search Styles
   searchContainer: {
     flexDirection: "row",
@@ -375,7 +391,7 @@ const styles = StyleSheet.create({
     borderBottomColor: COLORS.borderLight,
   },
   modalItemSelected: {
-    backgroundColor: COLORS.primaryAccent + '10',
+    backgroundColor: COLORS.primaryAccent + "10",
   },
   modalItemContent: {
     flexDirection: "row",

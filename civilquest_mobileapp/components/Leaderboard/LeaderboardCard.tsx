@@ -9,8 +9,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 
-import { LeaderboardEntry } from "../types";
-import { globalStyles, COLORS, SPACING, LAYOUT, FONTS } from "../theme";
+import { LeaderboardEntry } from "../../types";
+import { globalStyles, COLORS, SPACING, LAYOUT, FONTS } from "../../theme";
 
 export interface LeaderboardCardProps {
   entry: LeaderboardEntry;

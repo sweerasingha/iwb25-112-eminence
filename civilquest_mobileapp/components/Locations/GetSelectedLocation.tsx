@@ -10,7 +10,6 @@ import {
 } from "react-native";
 import { COLORS, FONTS, SPACING } from "theme";
 import { EventLocation } from "types";
-import { set } from "zod";
 
 interface LocationResult {
   place_id: number;

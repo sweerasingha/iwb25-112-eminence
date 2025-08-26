@@ -1,16 +1,9 @@
 import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  Image,
-  ScrollView,
-} from "react-native";
+import { View, Text, StyleSheet, Image, ScrollView } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import ParticipationButtons from "../../components/ParticipationButtons";
-import { Button } from "components/UI/Button";
+import { ParticipationButtons, Button } from "../../components";
 import { globalStyles, COLORS, SPACING, LAYOUT } from "../../theme";
 
 export default function EventDetailsScreen() {
@@ -25,7 +18,9 @@ export default function EventDetailsScreen() {
     return (
       <View style={[globalStyles.centerContainer]}>
         <Ionicons name="alert-circle" size={48} color={COLORS.error} />
-        <Text style={[globalStyles.h4, { marginTop: SPACING.md }]}>Event not found</Text>
+        <Text style={[globalStyles.h4, { marginTop: SPACING.md }]}>
+          Event not found
+        </Text>
       </View>
     );
   }
@@ -45,9 +40,20 @@ export default function EventDetailsScreen() {
                 style={styles.imageOverlay}
               />
               <View style={styles.headerContent}>
-                <View style={[styles.statusBadge, { backgroundColor: statusConfig.bg }]}>
-                  <Ionicons name={statusConfig.icon as any} size={14} color={statusConfig.color} />
-                  <Text style={[styles.statusText, { color: statusConfig.color }]}>
+                <View
+                  style={[
+                    styles.statusBadge,
+                    { backgroundColor: statusConfig.bg },
+                  ]}
+                >
+                  <Ionicons
+                    name={statusConfig.icon as any}
+                    size={14}
+                    color={statusConfig.color}
+                  />
+                  <Text
+                    style={[styles.statusText, { color: statusConfig.color }]}
+                  >
                     {statusConfig.text}
                   </Text>
                 </View>
@@ -62,8 +68,12 @@ export default function EventDetailsScreen() {
 
         {/* Title & Type */}
         <View style={[globalStyles.card, styles.contentCard]}>
-          <Text style={[globalStyles.h3, styles.title]}>{event.eventTitle}</Text>
-          <Text style={[globalStyles.bodySmall, styles.type]}>{event.eventType}</Text>
+          <Text style={[globalStyles.h3, styles.title]}>
+            {event.eventTitle}
+          </Text>
+          <Text style={[globalStyles.bodySmall, styles.type]}>
+            {event.eventType}
+          </Text>
 
           {/* Meta */}
           <View style={styles.meta}>
@@ -111,7 +121,12 @@ export default function EventDetailsScreen() {
                 </Text>
               </View>
               {event.userApplicationStatus.isParticipated && (
-                <View style={[styles.participationBadge, { backgroundColor: COLORS.primary }]}>
+                <View
+                  style={[
+                    styles.participationBadge,
+                    { backgroundColor: COLORS.primary },
+                  ]}
+                >
                   <Ionicons name="trophy" size={12} color={COLORS.white} />
                   <Text style={styles.participationText}>Participated</Text>
                 </View>
@@ -122,8 +137,12 @@ export default function EventDetailsScreen() {
 
         {/* Description */}
         <View style={[globalStyles.card, styles.section]}>
-          <Text style={[globalStyles.h5, styles.sectionTitle]}>About this event</Text>
-          <Text style={[globalStyles.body, styles.description]}>{event.eventDescription}</Text>
+          <Text style={[globalStyles.h5, styles.sectionTitle]}>
+            About this event
+          </Text>
+          <Text style={[globalStyles.body, styles.description]}>
+            {event.eventDescription}
+          </Text>
         </View>
 
         {/* Stats & Reward */}
@@ -132,13 +151,16 @@ export default function EventDetailsScreen() {
             <View style={styles.statItem}>
               <Ionicons name="people" size={18} color={COLORS.primary} />
               <Text style={globalStyles.bodySmall}>
-                {event.participantCount || event.participant?.length || 0} participants
+                {event.participantCount || event.participant?.length || 0}{" "}
+                participants
               </Text>
             </View>
             {event.sponsor?.length > 0 && (
               <View style={styles.statItem}>
                 <Ionicons name="diamond" size={18} color={COLORS.secondary} />
-                <Text style={globalStyles.bodySmall}>{event.sponsor.length} sponsors</Text>
+                <Text style={globalStyles.bodySmall}>
+                  {event.sponsor.length} sponsors
+                </Text>
               </View>
             )}
             {!!event.reward && (
@@ -152,7 +174,9 @@ export default function EventDetailsScreen() {
 
         {/* Actions */}
         <View style={[globalStyles.card, styles.section]}>
-          <Text style={[globalStyles.h5, styles.sectionTitle]}>Participate</Text>
+          <Text style={[globalStyles.h5, styles.sectionTitle]}>
+            Participate
+          </Text>
           <ParticipationButtons
             eventId={event.id}
             initialMethod={event.userApplicationStatus?.method || null}
@@ -163,7 +187,9 @@ export default function EventDetailsScreen() {
             fullWidth
             onPress={() => router.push(`/events/sponsor?eventId=${event.id}`)}
             style={{ marginTop: SPACING.md }}
-            leftIcon={<Ionicons name="diamond" size={18} color={COLORS.background} />}
+            leftIcon={
+              <Ionicons name="diamond" size={18} color={COLORS.background} />
+            }
           />
         </View>
 
@@ -171,7 +197,9 @@ export default function EventDetailsScreen() {
         <View style={[globalStyles.card, styles.section, styles.footerInfo]}>
           <Text style={globalStyles.caption}>Created by</Text>
           <Text style={globalStyles.bodySmall}>{event.createdBy}</Text>
-          <Text style={[globalStyles.caption, { marginTop: SPACING.sm }]}>Status</Text>
+          <Text style={[globalStyles.caption, { marginTop: SPACING.sm }]}>
+            Status
+          </Text>
           <Text style={globalStyles.bodySmall}>{event.status}</Text>
         </View>
 

@@ -1,11 +1,11 @@
 import React, { useMemo, useState } from "react";
 import { Alert, View, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { Button } from "./UI/Button";
-import { SPACING } from "../theme";
-import { ID } from "../types";
-import { eventService } from "../services/event";
-import { useAuth } from "../hooks/useAuth";
+import { Button } from "../UI/Button";
+import { SPACING } from "../../theme";
+import { ID } from "../../types";
+import { eventService } from "../../services/event";
+import { useAuth } from "../../hooks/useAuth";
 
 type ApplyMethod = "WILL_JOIN" | "INTERESTED";
 

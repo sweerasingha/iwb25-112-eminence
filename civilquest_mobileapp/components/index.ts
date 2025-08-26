@@ -1,18 +1,20 @@
 // UI Components
-export * from "./UI/Button";
-export * from "./UI/InputField";
-export * from "./UI/SponsorshipDropdown";
-export * from "./UI/DateTimePicker";
-export * from "./UI/TimePicker";
-export * from "./UI/Header";
-export * from "./UI/Loading";
-export * from "./UI/FloatingActionButton";
+export * from "./UI";
 
-// Feature Components
-export * from "./EventCard";
-export * from "./ParticipationButtons";
-export * from "./UserRoleBadge";
-export * from "./SearchAndFilter";
-export * from "./LeaderboardCard";
-export * from "./LeaderboardFilters";
-export * from "./AppliedEventCard";
+// Event Components
+export * from "./Events";
+
+// Search Components
+export * from "./Search";
+
+// User Components
+export * from "./User";
+
+// Leaderboard Components
+export * from "./Leaderboard";
+
+// Location Components
+export * from "./Locations";
+
+// Event Management Components
+export * from "./EventManagement";

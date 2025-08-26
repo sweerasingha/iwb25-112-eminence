@@ -2,10 +2,10 @@ import React from "react";
 import { View, Text, StyleSheet, TextInput } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-import { SponsorshipDropdown } from "./UI/SponsorshipDropdown";
-import { Button } from "./UI/Button";
-import { globalStyles, COLORS, SPACING, LAYOUT } from "../theme";
-import { LeaderboardFilters as LeaderboardFiltersType } from "../types";
+import { SponsorshipDropdown } from "../UI";
+import { Button } from "../UI";
+import { globalStyles, COLORS, SPACING, LAYOUT } from "../../theme";
+import { LeaderboardFilters as LeaderboardFiltersType } from "../../types";
 
 export interface LeaderboardFiltersProps {
   filters: LeaderboardFiltersType;
