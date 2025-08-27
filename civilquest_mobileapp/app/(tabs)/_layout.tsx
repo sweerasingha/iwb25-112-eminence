@@ -29,7 +29,6 @@ export default function TabLayout() {
 
   // User is authenticated, show the tabs
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.surface }}>
       <Tabs
         screenOptions={{
           headerShown: false,
@@ -120,6 +119,5 @@ export default function TabLayout() {
           }}
         />
       </Tabs>
-    </SafeAreaView>
   );
 }
