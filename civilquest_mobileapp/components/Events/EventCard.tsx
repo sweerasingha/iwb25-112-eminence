@@ -68,7 +68,6 @@ export const EventCard: React.FC<EventCardProps> = ({
     }
   };
 
-
   const statusConfig = getStatusConfig(event.status);
 
   const renderCompactCard = () => (
@@ -325,26 +324,26 @@ export const EventCard: React.FC<EventCardProps> = ({
           </Text>
         </View>
 
-        {event.userApplicationStatus?.hasApplied && (
+        {event.userApplicationStatus!.method !== undefined && (
           <View style={styles.participationStatus}>
             <View
               style={[
                 styles.participationBadge,
                 {
                   backgroundColor:
-                    event.userApplicationStatus.method === "WILL_JOIN"
+                    event.userApplicationStatus?.method === "WILL_JOIN"
                       ? COLORS.success
                       : COLORS.info,
                 },
               ]}
             >
               <Text style={styles.participationText}>
-                {event.userApplicationStatus.method === "WILL_JOIN"
+                {event.userApplicationStatus?.method === "WILL_JOIN"
                   ? " Joining"
                   : " Interested"}
               </Text>
             </View>
-            {event.userApplicationStatus.isParticipated && (
+            {event.userApplicationStatus?.isParticipated && (
               <View
                 style={[
                   styles.participationBadge,

@@ -209,7 +209,7 @@ export default function EventDetailsScreen() {
                 Participate
               </Text>
               <ParticipationButtons
-                eventId={event.id}
+                event={event}
                 initialMethod={event.userApplicationStatus?.method || null}
               />
               <Button

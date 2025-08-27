@@ -67,15 +67,6 @@ export default function HomeScreen() {
     />
   );
 
-  const renderFeaturedEvent = ({ item }: { item: Event }) => (
-    <EventCard
-      event={item}
-      onPress={() => handleEventPress(item)}
-      variant="featured"
-    />
-  );
-  
-
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
       <Ionicons name="calendar-outline" size={64} color={COLORS.textTertiary} />
@@ -136,6 +127,13 @@ export default function HomeScreen() {
     outputRange: [1, 0.8],
     extrapolate: "clamp",
   });
+  if (isLoadingEvents && !refreshing && filteredEvents.length === 0) {
+    return (
+      <View style={globalStyles.centerContainer}>
+        <Loading visible={true} message="Loading events..." variant="overlay" />
+      </View>
+    );
+  }
 
   return (
     <View style={globalStyles.container}>

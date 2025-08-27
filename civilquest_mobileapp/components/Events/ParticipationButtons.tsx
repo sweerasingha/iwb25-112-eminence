@@ -3,18 +3,18 @@ import { Alert, View, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { Button } from "../UI/Button";
 import { SPACING } from "../../theme";
-import { ID } from "../../types";
+import { Event, ID } from "../../types";
 import { eventService } from "../../services/event";
 import { useAuth } from "../../hooks/useAuth";
 
 type ApplyMethod = "WILL_JOIN" | "INTERESTED";
 
 interface Props {
-  eventId: ID;
+  event: Event;
   initialMethod?: ApplyMethod | null;
 }
 
-export function ParticipationButtons({ eventId, initialMethod = null }: Props) {
+export function ParticipationButtons({ event, initialMethod = null }: Props) {
   const router = useRouter();
   const { isAuthenticated, userEmail } = useAuth();
 
@@ -40,6 +40,8 @@ export function ParticipationButtons({ eventId, initialMethod = null }: Props) {
   };
 
   const apply = async (method: ApplyMethod) => {
+   
+
     if (!ensureAuth()) return;
     try {
       setLoading(method);
@@ -48,7 +50,7 @@ export function ParticipationButtons({ eventId, initialMethod = null }: Props) {
         name: deriveNameFromEmail(userEmail),
         method,
       };
-      const res = await eventService.applyToEvent(eventId, payload);
+      const res = await eventService.applyToEvent(event.id, payload);
       if (res.success) {
         setCurrent(method);
       } else {
