@@ -60,63 +60,38 @@ class EventService {
   }
 
   async getEventById(eventId: ID): Promise<ApiResponse<Event>> {
-    try {
-      const response = await api.get(`/events/${eventId}`);
-      return {
-        success: true,
-        data: response.data,
-        message: "Event fetched successfully",
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: error.message || "Failed to fetch event",
-      };
-    }
+    const response = await api.get(`/events/${eventId}`);
+    return response;
   }
 
   async createEvent(
     eventData: CreateEventRequest,
     imageFile?: any
   ): Promise<ApiResponse<Event>> {
-    try {
-      const sanitizeForApi = (value: string | undefined): string => {
-        return value ? value.trim().replace(/[<>]/g, "") : "";
-      };
+    const sanitizeForApi = (value: string | undefined): string => {
+      return value ? value.trim().replace(/[<>]/g, "") : "";
+    };
 
-      const data = new FormData();
+    const data = new FormData();
 
-      data.append("date", eventData.date);
-      data.append("startTime", eventData.startTime);
-      data.append("endTime", eventData.endTime);
-      data.append("location", sanitizeForApi(eventData.location));
-      data.append("city", eventData.city);
-      data.append("eventTitle", sanitizeForApi(eventData.eventTitle));
-      data.append("eventType", eventData.eventType);
-      data.append(
-        "eventDescription",
-        sanitizeForApi(eventData.eventDescription)
-      );
-      data.append("reward", sanitizeForApi(eventData.reward));
-      data.append("longitude", Number(eventData.longitude).toString());
-      data.append("latitude", Number(eventData.latitude).toString());
+    data.append("date", eventData.date);
+    data.append("startTime", eventData.startTime);
+    data.append("endTime", eventData.endTime);
+    data.append("location", sanitizeForApi(eventData.location));
+    data.append("city", eventData.city);
+    data.append("eventTitle", sanitizeForApi(eventData.eventTitle));
+    data.append("eventType", eventData.eventType);
+    data.append("eventDescription", sanitizeForApi(eventData.eventDescription));
+    data.append("reward", sanitizeForApi(eventData.reward));
+    data.append("longitude", Number(eventData.longitude).toString());
+    data.append("latitude", Number(eventData.latitude).toString());
 
-      if (imageFile) {
-        data.append("image", imageFile);
-      }
-
-      const response = await api.upload("/events", data);
-      return {
-        success: true,
-        data: response.data,
-        message: "Event created successfully",
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: error.message || "Failed to create event",
-      };
+    if (imageFile) {
+      data.append("image", imageFile);
     }
+
+    const response = await api.upload("/events", data);
+    return response;
   }
 
   async updateEvent(
@@ -127,217 +102,123 @@ class EventService {
       reward?: string;
     }
   ): Promise<ApiResponse<Event>> {
-    try {
-      const response = await api.put(`/events/${eventId}`, updateData);
-      return {
-        success: true,
-        data: response.data,
-        message: "Event updated successfully",
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: error.message || "Failed to update event",
-      };
-    }
+    const response = await api.put(`/events/${eventId}`, updateData);
+    return response;
   }
 
   async deleteEvent(eventId: ID): Promise<ApiResponse<null>> {
-    try {
-      const response = await api.delete(`/events/${eventId}`);
-      return {
-        success: true,
-        message: "Event deleted successfully",
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: error.message || "Failed to delete event",
-      };
-    }
+    const response = await api.delete(`/events/${eventId}`);
+    return response;
   }
 
   async endEvent(eventId: ID): Promise<ApiResponse<null>> {
-    try {
-      const response = await api.post(`/events/${eventId}/end`, {});
-      return {
-        success: true,
-        message: "Event ended successfully",
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: error.message || "Failed to end event",
-      };
-    }
+    const response = await api.post(`/events/${eventId}/end`, {});
+    return response;
   }
 
   async getMyEvents(): Promise<ApiResponse<Event[]>> {
-    try {
-      console.log("getMyEvents: Starting to fetch events");
-      const response = await api.get("/events");
-      console.log(
-        "getMyEvents: API response received:",
-        response.data?.length,
-        "events"
-      );
+    console.log("getMyEvents: Starting to fetch events");
+    const response = await api.get("/events");
 
-      if (!response.data) {
-        console.log("getMyEvents: No data in response");
-        return {
-          success: true,
-          data: [],
-          message: "No events found",
-        };
-      }
+    if (!response.success) {
+      console.log("getMyEvents: API Error:", response.error);
+      return response;
+    }
 
-      // Get current user email from token
-      const currentUserEmail = api.getCurrentUserEmail();
-      console.log("getMyEvents: Current user email:", currentUserEmail);
+    console.log(
+      "getMyEvents: API response received:",
+      response.data?.length,
+      "events"
+    );
 
-      if (!currentUserEmail) {
-        console.log("getMyEvents: No current user email found");
-        return {
-          success: false,
-          error: "Authentication required",
-        };
-      }
-
-      // Filter events created by current user
-      const myEvents = response.data.filter(
-        (event: Event) => event.createdBy === currentUserEmail
-      );
-
-      console.log("getMyEvents: Filtered events for user:", {
-        totalEvents: response.data.length,
-        myEventsCount: myEvents.length,
-        myEvents: myEvents,
-        currentUserEmail: currentUserEmail,
-      });
-
+    if (!response.data) {
+      console.log("getMyEvents: No data in response");
       return {
         success: true,
-        data: myEvents,
-        message: "Events fetched successfully",
-      };
-    } catch (error: any) {
-      console.log("getMyEvents: Error:", error);
-      return {
-        success: false,
-        error: error.message || "Failed to fetch your events",
+        data: [],
+        message: "No events found",
       };
     }
+
+    // Get current user email from token
+    const currentUserEmail = api.getCurrentUserEmail();
+    console.log("getMyEvents: Current user email:", currentUserEmail);
+
+    if (!currentUserEmail) {
+      console.log("getMyEvents: No current user email found");
+      return {
+        success: false,
+        error: "Authentication required",
+      };
+    }
+
+    // Filter events created by current user
+    const myEvents = response.data.filter(
+      (event: Event) => event.createdBy === currentUserEmail
+    );
+
+    console.log("getMyEvents: Filtered events for user:", {
+      totalEvents: response.data.length,
+      myEventsCount: myEvents.length,
+      myEvents: myEvents,
+      currentUserEmail: currentUserEmail,
+    });
+
+    return {
+      success: true,
+      data: myEvents,
+      message: response.message || "Events fetched successfully",
+    };
   }
 
   async applyToEvent(
     eventId: ID,
     participationData: ParticipationRequest
   ): Promise<ApiResponse<null>> {
-    try {
-      const response = await api.post(
-        `/events/${eventId}/apply`,
-        participationData
-      );
-      return {
-        success: true,
-        message: "Successfully applied to event",
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: error.message || "Failed to apply to event",
-      };
-    }
+    const response = await api.post(
+      `/events/${eventId}/apply`,
+      participationData
+    );
+    return response;
   }
 
   async removeParticipation(
     eventId: ID,
     participantId: ID
   ): Promise<ApiResponse<null>> {
-    try {
-      const response = await api.delete(
-        `/events/${eventId}/participants/${participantId}`
-      );
-      return {
-        success: true,
-        message: "Successfully removed participation",
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: error.message || "Failed to remove participation",
-      };
-    }
+    const response = await api.delete(
+      `/events/${eventId}/participants/${participantId}`
+    );
+    return response;
   }
 
   async getEventParticipants(eventId: ID): Promise<ApiResponse<any[]>> {
-    try {
-      const response = await api.get(`/events/${eventId}/participants`);
-      return {
-        success: true,
-        data: response.data,
-        message: "Participants fetched successfully",
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: error.message || "Failed to fetch participants",
-      };
-    }
+    const response = await api.get(`/events/${eventId}/participants`);
+    return response;
   }
 
   async getEventSponsors(eventId: ID): Promise<ApiResponse<any[]>> {
-    try {
-      const response = await api.get(`/events/${eventId}`);
-      if (!response.success) {
-        return {
-          success: false,
-          error: response.error || "Failed to fetch event",
-        };
-      }
-
-      const event = response.data as Event;
-      return {
-        success: true,
-        data: event.sponsor || [],
-        message: "Sponsors fetched successfully",
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: error.message || "Failed to fetch sponsors",
-      };
+    const response = await api.get(`/events/${eventId}`);
+    if (!response.success) {
+      return response;
     }
+
+    const event = response.data as Event;
+    return {
+      success: true,
+      data: event.sponsor || [],
+      message: response.message || "Sponsors fetched successfully",
+    };
   }
 
   async approveSponsor(sponsorId: ID): Promise<ApiResponse<null>> {
-    try {
-      const response = await api.put(`/sponsors/${sponsorId}/approve`, {});
-      return {
-        success: true,
-        message: "Sponsor approved successfully",
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: error.message || "Failed to approve sponsor",
-      };
-    }
+    const response = await api.put(`/sponsors/${sponsorId}/approve`, {});
+    return response;
   }
 
   async rejectSponsor(sponsorId: ID): Promise<ApiResponse<null>> {
-    try {
-      const response = await api.put(`/sponsors/${sponsorId}/reject`, {});
-      return {
-        success: true,
-        message: "Sponsor rejected successfully",
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: error.message || "Failed to reject sponsor",
-      };
-    }
+    const response = await api.put(`/sponsors/${sponsorId}/reject`, {});
+    return response;
   }
 
   async participateInEvent(data: {
@@ -345,21 +226,11 @@ class EventService {
     latitude: number;
     longitude: number;
   }): Promise<ApiResponse<null>> {
-    try {
-      const response = await api.post(`/events/${data.eventId}/participate`, {
-        latitude: data.latitude,
-        longitude: data.longitude,
-      });
-      return {
-        success: true,
-        message: "Successfully participated in event",
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: error.message || "Failed to participate in event",
-      };
-    }
+    const response = await api.post(`/events/${data.eventId}/participate`, {
+      latitude: data.latitude,
+      longitude: data.longitude,
+    });
+    return response;
   }
 }
 

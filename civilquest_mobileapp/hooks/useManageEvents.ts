@@ -67,14 +67,10 @@ export const useManageEvents = () => {
         Alert.alert("Success", "Successfully participated in event");
         dispatch(fetchMyEvents());
       } else {
-        Alert.alert(
-          "Error",
-          response.error || "Failed to participate in event"
-        );
+        
       }
     } catch (error) {
       Alert.alert("Error", "Failed to participate in event");
-      throw new Error("Failed to participate in event");
     } finally {
     }
   };

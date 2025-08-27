@@ -135,11 +135,22 @@ class ApiService {
             data: error.response?.data,
           });
         }
+
+    
         console.error(
-          (error.response?.data as any)?.errors[0] || "An error occurred"
+          (error.response?.data as any)?.errors?.[0] ||
+            (error.response?.data as any)?.error ||
+            (error.response?.data as any)?.message ||
+            "An error occurred"
         );
-        //show errors
-        Alert.alert((error.response?.data as any) || "An error occurred");
+        Alert.alert(
+          "Error",
+          (error.response?.data as any)?.errors?.[0] ||
+            (error.response?.data as any)?.error ||
+            (error.response?.data as any)?.message ||
+            (error.response?.data as any) ||
+            "An error occurred"
+        );
 
         return Promise.reject(this.handleError<any>(error));
       }
@@ -160,9 +171,15 @@ class ApiService {
   private handleError<T = any>(error: AxiosError): ApiResponse<T> {
     if (error.response) {
       // Server responded with error status
+      const responseData = error.response.data as any;
+
       const errorMessage =
-        (error.response.data as any)?.message ||
+        responseData?.error ||
+        responseData?.message ||
+        responseData?.errors?.[0] ||
+        responseData?.detail ||
         `HTTP ${error.response.status}: ${error.response.statusText}`;
+
       return {
         success: false,
         error: errorMessage,
@@ -189,6 +206,29 @@ class ApiService {
     try {
       const response = await this.axiosInstance.request<T>(config);
 
+    
+      const responseData = response.data as any;
+
+      // If the backend response has a success field, use it
+      if (
+        responseData &&
+        typeof responseData === "object" &&
+        "success" in responseData
+      ) {
+        return {
+          success: responseData.success,
+          data: responseData.data || responseData,
+          statusCode: response.status,
+          message:
+            responseData.message ||
+            (responseData.success ? "Request successful" : responseData.error),
+          error: responseData.success
+            ? undefined
+            : responseData.error || responseData.message,
+        };
+      }
+
+      // Otherwise, assume success for 2xx status codes
       return {
         success: true,
         data: response.data,
