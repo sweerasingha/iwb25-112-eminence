@@ -7,7 +7,14 @@ class SponsorshipService {
   async createSponsorship(
     sponsorshipData: SponsorshipRequest
   ): Promise<ApiResponse<Sponsorship>> {
-    const response = await api.post<Sponsorship>("/sponsors", sponsorshipData);
+    const response = await api.post<Sponsorship>("/sponsors", {
+      userId: sponsorshipData.userId,
+      eventId: sponsorshipData.eventId,
+      sponsorType: sponsorshipData.sponsorType,
+      amount: sponsorshipData.donationAmount,
+      donation: sponsorshipData.donation,
+      description: sponsorshipData.description,
+    });
     console.log("Create sponsorship response:", response);
     console.log("Create sponsorship response.data:", response.data);
     return response;

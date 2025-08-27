@@ -49,7 +49,7 @@ export default function SponsorEventScreen() {
     getFieldProps,
   } = useForm<SponsorshipFormData>(
     {
-      sponsorType: "",
+      sponsorType: "AMOUNT",
       donationAmount: "",
       donation: "",
       description: "",
@@ -91,7 +91,6 @@ export default function SponsorEventScreen() {
     }
   };
 
-  const sponsorTypes = getSponsorTypes();
 
   return (
     <KeyboardAvoidingView
@@ -122,16 +121,6 @@ export default function SponsorEventScreen() {
 
           {/* Form */}
           <View style={styles.form}>
-            <SponsorshipDropdown
-              label="Sponsor Type"
-              placeholder="Select sponsor type"
-              value={formData.sponsorType}
-              onSelect={(value) => handleChange("sponsorType", value)}
-              options={sponsorTypes}
-              error={touched.sponsorType ? errors.sponsorType : undefined}
-              required
-            />
-
             <InputField
               label="Donation Amount (LKR)"
               placeholder="Enter amount (e.g., 10000.00)"
