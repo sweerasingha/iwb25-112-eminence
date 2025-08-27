@@ -30,14 +30,14 @@ export default function EventDetailsScreen() {
       </View>
     );
   }
-  const isEventHappening = (event: Event) => {
+  const canParticipate = (event: Event) => {
     const now = new Date();
 
     const eventStart = new Date(`${event.date}T${event.startTime}:00`);
     const eventEnd = new Date(`${event.date}T${event.endTime}:00`);
 
     // Check if current time is between start and end
-    return now >= eventStart && now <= eventEnd;
+    return now >= eventStart;
   };
 
   const participateEvent = async () => {
@@ -203,7 +203,7 @@ export default function EventDetailsScreen() {
 
         {/* Actions */}
         {event.status === "APPROVED" &&
-          (!isEventHappening(event) ? (
+          (!canParticipate(event) ? (
             <View style={[globalStyles.card, styles.section]}>
               <Text style={[globalStyles.h5, styles.sectionTitle]}>
                 Participate
