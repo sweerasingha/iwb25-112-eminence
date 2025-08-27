@@ -15,8 +15,6 @@ class SponsorshipService {
       donation: sponsorshipData.donation,
       description: sponsorshipData.description,
     });
-    console.log("Create sponsorship response:", response);
-    console.log("Create sponsorship response.data:", response.data);
     return response;
   }
 

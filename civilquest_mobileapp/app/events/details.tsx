@@ -5,7 +5,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { ParticipationButtons, Button, Loading } from "../../components";
 import { globalStyles, COLORS, SPACING, LAYOUT, FONTS } from "../../theme";
-import { Event } from "types";
+import { Event, Sponsorship } from "types";
 import { useManageEvents } from "hooks/useManageEvents";
 import { useLocation } from "hooks/useLocation";
 
@@ -249,8 +249,26 @@ export default function EventDetailsScreen() {
             </View>
           ))}
 
+          {/* show sponsors  */}
+          <View style={[globalStyles.card, styles.section]}>
+            <Text style={[globalStyles.h5, styles.sectionTitle]}>
+              Sponsors
+            </Text>
+            {event.sponsor?.length > 0 ? (
+              event.sponsor.map((sponsor:Sponsorship) => (
+                <Text key={sponsor.id} style={globalStyles.bodySmall}>
+                  {sponsor.description}
+                </Text>
+              ))
+            ) : (
+              <Text style={globalStyles.bodySmall}>
+                No sponsors for this event
+              </Text>
+            )}
+          </View>
+
         {/* Footer info */}
-        <View style={[globalStyles.card, styles.section, styles.footerInfo]}>
+        <View style={[globalStyles.card, styles.section, styles.footerInfo,{marginBottom: SPACING.md}]}>
           <Text style={globalStyles.caption}>Created by</Text>
           <Text style={globalStyles.bodySmall}>{event.createdBy}</Text>
           <Text style={[globalStyles.caption, { marginTop: SPACING.sm }]}>
