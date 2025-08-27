@@ -106,7 +106,6 @@ export default function ManageAdminOperators() {
             await useAdminOperatorHook.deleteAdminOperator(
               selectedAdminOperator._id?.$oid!
             );
-            await useAdminOperatorHook.fetchAdminOperators();
             deleteDialog.close();
           }
         }}

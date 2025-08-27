@@ -6,17 +6,19 @@ type LoadingButtonProps = {
   onClick: () => Promise<void>;
   children: any;
   className?: string;
+  disabled?: boolean;
 };
 
 const LoadingButton: React.FC<LoadingButtonProps> = ({
   onClick,
   children,
   className = "",
+  disabled = false,
 }) => {
   const [loading, setLoading] = useState(false);
 
   const handleClick = async () => {
-    if (loading) return;
+  if (loading || disabled) return;
     setLoading(true);
     try {
       await onClick();
@@ -28,7 +30,7 @@ const LoadingButton: React.FC<LoadingButtonProps> = ({
   return (
     <button
       onClick={handleClick}
-      disabled={loading}
+      disabled={loading || disabled}
       className={
         className
           ? className
