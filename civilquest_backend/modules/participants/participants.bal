@@ -108,22 +108,31 @@ public function participateInEvent(http:Caller caller, http:Request req, string 
 
     // Build UTC datetimes from event date and times (expects YYYY-MM-DD and HH:MM)
     string startIso = event.date + "T" + event.startTime + ":00.000Z";
-    string endTimeStr = event.endTime is string ? <string>event.endTime : event.startTime;
-    string endIso = event.date + "T" + endTimeStr + ":00.000Z";
-
     time:Utc|error startUtc = time:utcFromString(startIso);
-    time:Utc|error endUtc = time:utcFromString(endIso);
-    if startUtc is error || endUtc is error {
-        return utils:badRequest(caller, "Invalid event date/time format");
+    if startUtc is error {
+        return utils:badRequest(caller, "Invalid event start date/time");
     }
-
-    // Allow until one hour after end
     time:Utc now = time:utcNow();
-    time:Seconds sinceStart = time:utcDiffSeconds(now, <time:Utc>startUtc);
-    time:Seconds untilEndPlusOne = time:utcDiffSeconds(<time:Utc>endUtc, now) + 3600d;
-
-    if sinceStart < 0d || untilEndPlusOne < 0d {
-        return utils:forbidden(caller, "Participation is allowed only during the event and up to 1 hour after it ends");
+    time:Utc nowLocal = time:utcAddSeconds(now, 19800);
+    string nowIsoLocal = time:utcToString(nowLocal);
+    string todayLocal = nowIsoLocal.substring(0, 10);
+    if todayLocal != event.date {
+        return utils:forbidden(caller, "Participation is allowed only on the event day");
+    }
+    time:Utc startUtcAdj = time:utcAddSeconds(<time:Utc>startUtc, -19800);
+    if time:utcDiffSeconds(now, startUtcAdj) < 0d {
+        return utils:forbidden(caller, "Participation is allowed only after the event starts");
+    }
+    if event.endTime is string {
+        string endIso = event.date + "T" + <string>event.endTime + ":00.000Z";
+        time:Utc|error endUtc = time:utcFromString(endIso);
+        if endUtc is error {
+            return utils:badRequest(caller, "Invalid event end time");
+        }
+        time:Utc endUtcAdj = time:utcAddSeconds(<time:Utc>endUtc, -19800);
+        if time:utcDiffSeconds(endUtcAdj, now) < 0d {
+            return utils:forbidden(caller, "Participation is allowed only until the event ends on the event day");
+        }
     }
 
     // Find existing participation (application) if any
@@ -178,6 +187,19 @@ public function participateInEvent(http:Caller caller, http:Request req, string 
             }
         }
 
+        mongodb:UpdateResult|error _meta1 = eventCollection->updateOne(
+            {"_id": eventId, "applications.userId": userId},
+            {"set": {"applications.$.isParticipated": true}}
+        );
+        if _meta1 is error {
+        }
+        mongodb:UpdateResult|error _meta2 = eventCollection->updateOne(
+            {"_id": eventId},
+            {"addToSet": {"applications": {"userId": userId, "method": "WILL_JOIN", "createdAt": nowStr, "isParticipated": true}}}
+        );
+        if _meta2 is error {
+        }
+
         // Sync participant list on event
         error? syncErr = syncParticipantCount(eventId);
         if syncErr is error {
@@ -200,6 +222,13 @@ public function participateInEvent(http:Caller caller, http:Request req, string 
     }
     mongodb:UpdateResult|error rel4 = eventCollection->updateOne({"_id": eventId}, {"addToSet": {"participant": userId}});
     if rel4 is error {
+    }
+
+    mongodb:UpdateResult|error _meta3 = eventCollection->updateOne(
+        {"_id": eventId, "applications.userId": userId},
+        {"set": {"applications.$.isParticipated": true}}
+    );
+    if _meta3 is error {
     }
 
     // Award points only if transitioning from false -> true
@@ -245,6 +274,12 @@ public function applyToEvent(http:Caller caller, http:Request req, string eventI
     string participantId = uuid:createRandomUuid();
     string now = time:utcToString(time:utcNow());
 
+    if !m.hasKey("method") {
+        return utils:badRequest(caller, "method is required");
+    }
+    string method = m["method"].toString();
+    string nameVal = m.hasKey("name") ? m["name"].toString() : "";
+
     // Verify event exists and is approved
     Event|error|() event = eventCollection->findOne({"_id": eventId});
     if event is error {
@@ -257,18 +292,78 @@ public function applyToEvent(http:Caller caller, http:Request req, string eventI
         return utils:badRequest(caller, "Can only apply to approved events");
     }
 
+    string startIso = event.date + "T" + event.startTime + ":00.000Z";
+    time:Utc|error startUtc = time:utcFromString(startIso);
+    if startUtc is error {
+        return utils:badRequest(caller, "Invalid event start date/time");
+    }
+    time:Utc nowUtc = time:utcNow();
+    time:Utc startUtcAdj = time:utcAddSeconds(<time:Utc>startUtc, -19800);
+    if time:utcDiffSeconds(nowUtc, startUtcAdj) >= 0d {
+        return utils:forbidden(caller, "Applications are closed as the event has started");
+    }
+
     // Check if user already applied to this event
     Participant|error|() existingParticipant = participantCollection->findOne({
         "eventId": eventId,
         "userId": userId
     });
 
-    if existingParticipant is Participant {
-        return utils:badRequest(caller, "User has already applied to this event");
-    }
-
     if existingParticipant is error {
         return utils:serverError(caller, "Server error checking existing participation");
+    }
+
+    if existingParticipant is Participant {
+        if existingParticipant.method != method {
+            mongodb:UpdateResult|error ur = participantCollection->updateOne(
+                {"_id": existingParticipant._id}, {"set": {"method": method}}
+            );
+            if ur is error {
+                return utils:serverError(caller, "Failed to update application method");
+            }
+            mongodb:UpdateResult|error metaUpdate = eventCollection->updateOne(
+                {"_id": eventId, "applications.userId": userId},
+                {"set": {"applications.$.method": method}}
+            );
+            if metaUpdate is error {
+                mongodb:UpdateResult|error add1 = eventCollection->updateOne(
+                    {"_id": eventId},
+                    {"addToSet": {"applications": {"userId": userId, "method": method, "createdAt": now}}}
+                );
+                if add1 is error {
+                }
+            } else if metaUpdate.matchedCount == 0 {
+                mongodb:UpdateResult|error add2 = eventCollection->updateOne(
+                    {"_id": eventId},
+                    {"addToSet": {"applications": {"userId": userId, "method": method, "createdAt": now}}}
+                );
+                if add2 is error {
+                }
+            }
+
+            mongodb:UpdateResult|error relA = userCollection->updateOne({"email": userId}, {"addToSet": {"eventId": eventId}});
+            if relA is error {
+            }
+            mongodb:UpdateResult|error relB = eventCollection->updateOne({"_id": eventId}, {"addToSet": {"participant": userId}});
+            if relB is error {
+            }
+
+            check caller->respond(<http:Ok>{
+                body: {id: existingParticipant._id, message: "Application method updated", method}
+            });
+            return;
+        } else {
+            mongodb:UpdateResult|error add3 = eventCollection->updateOne(
+                {"_id": eventId},
+                {"addToSet": {"applications": {"userId": userId, "method": method, "createdAt": existingParticipant.createdAt}}}
+            );
+            if add3 is error {
+            }
+            check caller->respond(<http:Ok>{
+                body: {id: existingParticipant._id, message: "Application method unchanged", method}
+            });
+            return;
+        }
     }
 
     // Create participant record
@@ -277,8 +372,8 @@ public function applyToEvent(http:Caller caller, http:Request req, string eventI
         id: participantId,
         eventId: eventId,
         userId: userId,
-        name: <string>m["name"],
-        method: <string>m["method"],
+        name: nameVal,
+        method: method,
         isParticipated: false,
         createdAt: now
     };
@@ -308,6 +403,14 @@ public function applyToEvent(http:Caller caller, http:Request req, string eventI
 
     if eventUpdateResult is error {
         return utils:serverError(caller, "Server error updating event participation record");
+    }
+
+    mongodb:UpdateResult|error eventMetaUpdate = eventCollection->updateOne(
+        {"_id": eventId},
+        {"addToSet": {"applications": {"userId": userId, "method": method, "createdAt": now}}}
+    );
+    if eventMetaUpdate is error {
+        // ignore
     }
 
     // Sync participant count to ensure accuracy
@@ -884,4 +987,3 @@ public function fixAllParticipantCounts(http:Caller caller, http:Request req) re
         }
     });
 }
-

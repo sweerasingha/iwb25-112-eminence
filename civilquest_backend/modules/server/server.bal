@@ -198,7 +198,7 @@ service /api on httpListener {
         check participants:applyToEvent(caller, req, eventId);
     }
 
-    // Participation confirmation (actual attendance) allowed only during event period and 1 hour after
+    // Participation confirmation allowed only on the event day during the event time
     resource function post events/[string eventId]/participate(http:Caller caller, http:Request req) returns error? {
         check middleware:tokenValidation(caller, req);
         check middleware:assertAnyRole(caller, req, ["USER", "PREMIUM_USER"]);

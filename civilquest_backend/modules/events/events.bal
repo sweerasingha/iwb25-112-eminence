@@ -15,12 +15,14 @@ import ballerinax/mongodb;
 // Add participant type for participation checking
 public type Participant record {|
     string _id;
+    string id?;
     string eventId;
     string userId;
     string name;
     string method; // INTERESTED or WILL_JOIN
     boolean isParticipated = false;
     string createdAt;
+    json...;
 |};
 
 // Normalize string for case-insensitive, trimmed comparisons
@@ -782,29 +784,109 @@ public function getEvents(http:Caller caller, http:Request req) returns error? {
             eventMap["id"] = eid;
         }
 
-        // Actual participant count
-        int|error participantCount = participantCollection->countDocuments({"eventId": eid});
-        eventMap["participantCount"] = participantCount is int ? participantCount : 0;
+        int participantCountComputed = 0;
+        anydata|() partArr = eventMap.hasKey("participant") ? eventMap["participant"] : ();
+        if partArr is json[] {
+            participantCountComputed = partArr.length();
+        } else {
+            int|error pc = participantCollection->countDocuments({"eventId": eid});
+            if pc is int {
+                participantCountComputed = pc;
+            }
+        }
+        eventMap["participantCount"] = participantCountComputed;
 
         // If user is authenticated, check their application status
         if currentUserId is string {
-            Participant|error|() userParticipation = participantCollection->findOne({
+            record {|anydata...;|}|error|() userParticipation = participantCollection->findOne({
                 "eventId": eid,
                 "userId": currentUserId
             });
-
-            if userParticipation is Participant {
-                eventMap["userApplicationStatus"] = {
-                    "hasApplied": true,
-                    "method": userParticipation.method,
-                    "isParticipated": userParticipation.isParticipated,
-                    "appliedAt": userParticipation.createdAt
+            if userParticipation is () {
+                string uId = <string>currentUserId;
+                map<json> ciFilter = {
+                    "eventId": eid,
+                    "userId": {"$regex": "^" + uId + "$", "$options": "i"}
                 };
+                userParticipation = participantCollection->findOne(ciFilter);
+            }
+
+            if userParticipation is error {
+                // ignore; do not add status
+            } else if userParticipation is () {
+                boolean applied = false;
+                string? methodF = ();
+                boolean isPartF = false;
+                string? appliedAtF = ();
+                anydata|() apps = eventMap.hasKey("applications") ? eventMap["applications"] : ();
+                if apps is json[] {
+                    foreach json a in apps {
+                        if a is map<json> {
+                            anydata|() uidv = a["userId"];
+                            if uidv is string && normalize(uidv) == normalize(<string>currentUserId) {
+                                applied = true;
+                                anydata|() mv = a["method"];
+                                if mv is string {
+                                    methodF = mv;
+                                }
+                                anydata|() pv = a["isParticipated"];
+                                if pv is boolean {
+                                    isPartF = pv;
+                                }
+                                anydata|() cav = a["createdAt"];
+                                if cav is string {
+                                    appliedAtF = cav;
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+                if applied {
+                    map<json> status = {"hasApplied": true};
+                    if methodF is string {
+                        status["method"] = methodF;
+                    }
+                    status["isParticipated"] = isPartF;
+                    if appliedAtF is string {
+                        status["appliedAt"] = appliedAtF;
+                    }
+                    eventMap["userApplicationStatus"] = status;
+                } else {
+                    boolean appliedLegacy = false;
+                    anydata|() part = eventMap.hasKey("participant") ? eventMap["participant"] : ();
+                    if part is json[] {
+                        foreach json u in part {
+                            if u is string && normalize(u) == normalize(<string>currentUserId) {
+                                appliedLegacy = true;
+                                break;
+                            }
+                        }
+                    }
+                    if appliedLegacy {
+                        eventMap["userApplicationStatus"] = {"hasApplied": true};
+                    } else {
+                        eventMap["userApplicationStatus"] = {"hasApplied": false};
+                    }
+                }
             } else {
-                eventMap["userApplicationStatus"] = {"hasApplied": false};
+                record {|anydata...;|} upr = <record {|anydata...;|}>userParticipation;
+                string? method = (upr["method"] is string) ? <string>upr["method"] : ();
+                boolean isParticipated = (upr["isParticipated"] is boolean) ? <boolean>upr["isParticipated"] : false;
+                string? appliedAt = (upr["createdAt"] is string) ? <string>upr["createdAt"] : ();
+                map<json> status = {"hasApplied": true};
+                if method is string {
+                    status["method"] = method;
+                }
+                status["isParticipated"] = isParticipated;
+                if appliedAt is string {
+                    status["appliedAt"] = appliedAt;
+                }
+                eventMap["userApplicationStatus"] = status;
             }
         }
 
+        // Include approved sponsors detailed list
         json[] sponsorsDetailedList = getApprovedSponsorsJson(eid);
         if sponsorsDetailedList.length() > 0 {
             eventMap["sponsors"] = sponsorsDetailedList;
@@ -818,23 +900,45 @@ public function getEvents(http:Caller caller, http:Request req) returns error? {
 
 // Get single event by ID
 public function getEvent(http:Caller caller, http:Request req, string eventId) returns error? {
-    Event|error|() event = eventCollection->findOne({"_id": eventId});
-    if event is error {
+    record {|anydata...;|}|error|() edoc = eventCollection->findOne({"_id": eventId});
+    if edoc is error {
         return utils:serverError(caller);
     }
-    if event is () {
+    if edoc is () {
         return utils:notFound(caller, "Event not found");
     }
 
+    record {|anydata...;|} ev = <record {|anydata...;|}>edoc;
+    map<json> eventMap = {};
+    foreach var [k, v] in ev.entries() {
+        eventMap[k] = <json>v;
+    }
+    if !eventMap.hasKey("id") || !(eventMap["id"] is string) {
+        anydata|() _idv = eventMap["_id"];
+        string eid = _idv is string ? _idv : _idv.toString();
+        eventMap["id"] = eid;
+    }
+    if !eventMap.hasKey("applications") {
+        eventMap["applications"] = [];
+    }
+    string eid = <string>eventMap["id"];
     json[] sponsorsDetailed = getApprovedSponsorsJson(eventId);
-    json eventJson = event;
-    map<json> eventMap = toPlainJsonMap(eventJson);
     if sponsorsDetailed.length() > 0 {
         eventMap["sponsors"] = sponsorsDetailed;
     }
     // Add participantCount for single event response
-    int|error participantCount = participantCollection->countDocuments({"eventId": eventId});
-    eventMap["participantCount"] = participantCount is int ? participantCount : 0;
+    int participantCount = 0;
+    anydata|() partArr2 = eventMap.hasKey("participant") ? eventMap["participant"] : ();
+    if partArr2 is json[] {
+        participantCount = partArr2.length();
+    }
+    else {
+        int|error pc2 = participantCollection->countDocuments({"eventId": eid});
+        if pc2 is int {
+            participantCount = pc2;
+        }
+    }
+    eventMap["participantCount"] = participantCount;
 
     // If user is authenticated, add their participation status
     string|error? authHeader = req.getHeader("Authorization");
@@ -842,19 +946,90 @@ public function getEvent(http:Caller caller, http:Request req, string eventId) r
         string tokenStr = authHeader.substring(7);
         string|error userIdFromToken = token:extractUserId(tokenStr);
         if userIdFromToken is string {
-            Participant|error|() userParticipation = participantCollection->findOne({
-                "eventId": eventId,
+            record {|anydata...;|}|error|() userParticipation = participantCollection->findOne({
+                "eventId": eid,
                 "userId": userIdFromToken
             });
-            if userParticipation is Participant {
-                eventMap["userApplicationStatus"] = {
-                    "hasApplied": true,
-                    "method": userParticipation.method,
-                    "isParticipated": userParticipation.isParticipated,
-                    "appliedAt": userParticipation.createdAt
+            if userParticipation is () {
+                string tokenId = <string>userIdFromToken;
+                map<json> ciFilter = {
+                    "eventId": eid,
+                    "userId": {"$regex": "^" + tokenId + "$", "$options": "i"}
                 };
+                userParticipation = participantCollection->findOne(ciFilter);
+            }
+            if userParticipation is error {
+                // ignore
+            } else if userParticipation is () {
+                boolean applied = false;
+                string? methodF = ();
+                boolean isPartF = false;
+                string? appliedAtF = ();
+                anydata|() apps = eventMap.hasKey("applications") ? eventMap["applications"] : ();
+                if apps is json[] {
+                    foreach json a in apps {
+                        if a is map<json> {
+                            anydata|() uidv = a["userId"];
+                            if uidv is string && normalize(uidv) == normalize(<string>userIdFromToken) {
+                                applied = true;
+                                anydata|() mv = a["method"];
+                                if mv is string {
+                                    methodF = mv;
+                                }
+                                anydata|() pv = a["isParticipated"];
+                                if pv is boolean {
+                                    isPartF = pv;
+                                }
+                                anydata|() cav = a["createdAt"];
+                                if cav is string {
+                                    appliedAtF = cav;
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+                if applied {
+                    map<json> status = {"hasApplied": true};
+                    if methodF is string {
+                        status["method"] = methodF;
+                    }
+                    status["isParticipated"] = isPartF;
+                    if appliedAtF is string {
+                        status["appliedAt"] = appliedAtF;
+                    }
+                    eventMap["userApplicationStatus"] = status;
+                } else {
+                    boolean appliedLegacy = false;
+                    anydata|() part = eventMap.hasKey("participant") ? eventMap["participant"] : ();
+                    if part is json[] {
+                        foreach json u in part {
+                            if u is string && normalize(u) == normalize(<string>userIdFromToken) {
+                                appliedLegacy = true;
+                                break;
+                            }
+                        }
+                    }
+                    if appliedLegacy {
+                        eventMap["userApplicationStatus"] = {"hasApplied": true};
+                    } else {
+                        eventMap["userApplicationStatus"] = {"hasApplied": false};
+                    }
+                }
             } else {
-                eventMap["userApplicationStatus"] = {"hasApplied": false};
+                record {|anydata...;|} upr = <record {|anydata...;|}>userParticipation;
+                string? method = (upr["method"] is string) ? <string>upr["method"] : ();
+                boolean isParticipated = (upr["isParticipated"] is boolean) ? <boolean>upr["isParticipated"] : false;
+                string? appliedAt = (upr["createdAt"] is string) ? <string>upr["createdAt"] : ();
+                map<json> status = {"hasApplied": true};
+                if method is string {
+                    status["method"] = method;
+                }
+                status["isParticipated"] = isParticipated;
+                if appliedAt is string {
+                    status["appliedAt"] = appliedAt;
+                }
+                eventMap["userApplicationStatus"] = status;
             }
         }
     }
