@@ -146,7 +146,7 @@ export const LeaderboardCard: React.FC<LeaderboardCardProps> = ({
             <View style={styles.rankItem}>
               <Text style={[globalStyles.caption, styles.rankLabel]}>City</Text>
               <Text style={[globalStyles.bodySmall, styles.rankValue]}>
-                #{cityRank}
+                #{cityRank}-{livingCity}
               </Text>
             </View>
           )}

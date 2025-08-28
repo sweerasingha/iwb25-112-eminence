@@ -2,25 +2,20 @@ import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
-  FlatList,
   StyleSheet,
   RefreshControl,
   Alert,
-  TouchableOpacity,
+  Keyboard,
+  FlatList,
+  Platform,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 
-import {
-  LeaderboardCard,
-  LeaderboardFilters,
-  Header,
-  Loading,
-} from "../../components";
+import { LeaderboardCard, LeaderboardFilters, Loading } from "../../components";
 import { useLeaderboard } from "../../hooks";
 import { globalStyles, COLORS, SPACING, LAYOUT } from "../../theme";
 import { LeaderboardEntry } from "../../types";
-
 
 export default function LeaderboardScreen() {
   const {
@@ -38,7 +33,6 @@ export default function LeaderboardScreen() {
   } = useLeaderboard();
 
   const [refreshing, setRefreshing] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     if (error) {
@@ -47,7 +41,7 @@ export default function LeaderboardScreen() {
         { text: "OK", style: "cancel" },
       ]);
     }
-  }, [error, loadLeaderboard]);
+  }, [error]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -63,13 +57,8 @@ export default function LeaderboardScreen() {
     resetFilters();
   };
 
-  const toggleFilters = () => {
-    setShowFilters(!showFilters);
-  };
-
   const renderLeaderboardEntry = ({
     item,
-    index,
   }: {
     item: LeaderboardEntry;
     index: number;
@@ -108,7 +97,6 @@ export default function LeaderboardScreen() {
 
   const renderHeader = () => (
     <View style={styles.headerContainer}>
-      {/* Hero Section */}
       <LinearGradient
         colors={[COLORS.gradientStart, COLORS.gradientEnd]}
         style={styles.heroSection}
@@ -118,14 +106,13 @@ export default function LeaderboardScreen() {
           <View style={styles.heroText}>
             <Text style={[globalStyles.h2, styles.heroTitle]}>Leaderboard</Text>
             <Text style={[globalStyles.body, styles.heroSubtitle]}>
-              {leaderboardData?.scope === "local"
-                ? "Local Rankings"
+              {leaderboardData?.scope === "global"
+                ? "Global Rankings"
                 : `${filters.city} Rankings`}
             </Text>
           </View>
         </View>
 
-        {/* Stats */}
         {leaderboardData && (
           <View style={styles.statsContainer}>
             <View style={styles.statItem}>
@@ -148,36 +135,16 @@ export default function LeaderboardScreen() {
         )}
       </LinearGradient>
 
-      {/* Filter Toggle */}
-      <View style={styles.filterToggleContainer}>
-        <TouchableOpacity
-          style={styles.filterButton}
-          onPress={toggleFilters}
-          activeOpacity={0.7}
-        >
-          <View style={styles.filterButtonContent}>
-            <Ionicons
-              name={showFilters ? "chevron-up-outline" : "funnel-outline"}
-              size={24}
-              color={COLORS.textPrimary}
-            />
-          </View>
-        </TouchableOpacity>
+      <View style={styles.filtersContainer}>
+        <LeaderboardFilters
+          filters={filters}
+          availableCities={availableCities}
+          limitOptions={limitOptions}
+          onFiltersChange={handleFiltersChange}
+          onClearFilters={handleClearFilters}
+          isLoading={isLoading}
+        />
       </View>
-
-      {/* Filters */}
-      {showFilters && (
-        <View style={styles.filtersContainer}>
-          <LeaderboardFilters
-            filters={filters}
-            availableCities={availableCities}
-            limitOptions={limitOptions}
-            onFiltersChange={handleFiltersChange}
-            onClearFilters={handleClearFilters}
-            isLoading={isLoading}
-          />
-        </View>
-      )}
     </View>
   );
 
@@ -194,14 +161,19 @@ export default function LeaderboardScreen() {
   }
 
   return (
-    <View style={globalStyles.container}>
+    <View style={{ flex: 1 }}>
       <FlatList
         data={leaderboard}
         renderItem={renderLeaderboardEntry}
         keyExtractor={(item, index) => `${item.email}-${index}`}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
-        removeClippedSubviews={true}
+        // Important for scrolling vs keyboard:
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === "ios" ? "on-drag" : "none"}
+        onScrollBeginDrag={Keyboard.dismiss}
+        // Avoid touch/clip issues:
+        removeClippedSubviews={false}
         maxToRenderPerBatch={10}
         windowSize={10}
         initialNumToRender={8}
@@ -274,15 +246,11 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     opacity: 0.8,
   },
-  filterToggleContainer: {
-    paddingHorizontal: SPACING.lg,
-  },
   filtersContainer: {
     paddingHorizontal: SPACING.lg,
   },
   listContainer: {
-    flexGrow: 1,
-    paddingBottom: SPACING.lg,
+    paddingBottom: SPACING.enormous, 
   },
   cardContainer: {
     paddingHorizontal: SPACING.lg,
@@ -291,7 +259,7 @@ const styles = StyleSheet.create({
     height: SPACING.sm,
   },
   footer: {
-    height: SPACING.enormous,
+    height: SPACING.lg,
   },
   emptyState: {
     alignItems: "center",
@@ -324,20 +292,5 @@ const styles = StyleSheet.create({
     color: COLORS.textTertiary,
     textAlign: "center",
     lineHeight: 22,
-  },
-  filterButton: {
-    width: 40,
-    height: 40,
-    borderRadius: LAYOUT.borderRadius.lg,
-    backgroundColor: COLORS.backgroundSecondary,
-    alignItems: "center",
-    justifyContent: "center",
-    alignSelf: "flex-end",
-    marginRight: SPACING.lg,
-    ...LAYOUT.shadows.xs,
-  },
-  filterButtonContent: {
-    alignItems: "center",
-    justifyContent: "center",
   },
 });
