@@ -9,6 +9,7 @@ import {
   Alert,
   TouchableOpacity,
   Animated,
+  Image,
 } from "react-native";
 import { Link, useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -40,22 +41,14 @@ export default function LoginScreen() {
     }).start();
   }, []);
 
-  const {
-    formData,
-    errors,
-    touched,
-    isValid,
-    handleChange,
-    handleBlur,
-    validate,
-    getFieldProps,
-  } = useForm<LoginFormData>(
-    {
-      email: "",
-      password: "",
-    },
-    loginSchema
-  );
+  const { formData, errors, touched, validate, getFieldProps } =
+    useForm<LoginFormData>(
+      {
+        email: "",
+        password: "",
+      },
+      loginSchema
+    );
 
   const handleFormSubmit = async () => {
     const isValidForm = validate();
@@ -99,7 +92,7 @@ export default function LoginScreen() {
     >
       {/* Background Gradient */}
       <LinearGradient
-        colors={[COLORS.gradientStart, COLORS.gradientEnd]}
+        colors={[COLORS.primary, COLORS.secondary]}
         style={StyleSheet.absoluteFillObject}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -114,7 +107,11 @@ export default function LoginScreen() {
           {/* Logo Section */}
           <View style={styles.logoSection}>
             <View style={styles.logoContainer}>
-              <Ionicons name="construct" size={48} color={COLORS.white} />
+              <Image
+                source={require("../../assets/2.png")}
+                style={styles.appIcon}
+                resizeMode="contain"
+              />
             </View>
             <Text style={[globalStyles.displayMedium, styles.appTitle]}>
               Civil Quest
@@ -194,8 +191,6 @@ export default function LoginScreen() {
               </Link>
             </View>
           </View>
-
-        
         </Animated.View>
       </ScrollView>
 
@@ -213,7 +208,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.primary,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
   },
   scrollContainer: {
     flexGrow: 1,
@@ -341,5 +336,23 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "500",
     textAlign: "center",
+  },
+
+  iconContainer: {
+    width: 60,
+    height: 60,
+    backgroundColor: COLORS.white,
+    borderRadius: 60,
+    padding: SPACING.sm,
+    marginRight: SPACING.lg,
+    marginBottom: SPACING.md,
+    alignItems: "center",
+    justifyContent: "center",
+    ...LAYOUT.shadows.md,
+  },
+  appIcon: {
+    width: 40,
+    height: 40,
+    color: COLORS.white,
   },
 });

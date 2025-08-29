@@ -7,13 +7,17 @@ import {
   Platform,
   ScrollView,
   Alert,
+  Animated,
+  Image,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
 import { z } from "zod";
 
-import { Button, InputField } from "../../components";
-import { useAuth, useForm } from "../../hooks";
-import { globalStyles, COLORS, SPACING } from "../../theme";
+import { Button, InputField, Loading } from "../../components";
+import { useForm } from "../../hooks";
+import { globalStyles, COLORS, SPACING, LAYOUT } from "../../theme";
 import { api } from "../../services/api";
 
 const otpSchema = z.object({
@@ -32,22 +36,25 @@ export default function OTPVerificationScreen() {
   const email = Array.isArray(params.email)
     ? params.email[0]
     : params.email || "";
+
   const [isVerifying, setIsVerifying] = useState(false);
+  const [fadeAnim] = useState(new Animated.Value(0));
+
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true,
+    }).start();
+  }, []);
 
   const {
     formData,
     errors,
     touched,
-    handleChange,
-    handleBlur,
     validate,
     getFieldProps,
-  } = useForm<OTPFormData>(
-    {
-      otp: "",
-    },
-    otpSchema
-  );
+  } = useForm<OTPFormData>({ otp: "" }, otpSchema);
 
   const handleOTPSubmit = async () => {
     const isValidForm = validate();
@@ -63,32 +70,24 @@ export default function OTPVerificationScreen() {
       setIsVerifying(true);
       try {
         const response = await api.post("/auth/register/complete", {
-          email: email,
+          email,
           otp: formData.otp,
         });
 
         if (response.success) {
-          Alert.alert(
-            "Registration Complete!",
-            "Your account has been successfully created. You can now log in.",
-            [
-              {
-                text: "OK",
-                onPress: () => router.replace("/auth/login"),
-              },
-            ]
-          );
+          Alert.alert("Success", "Your account has been created!", [
+            { text: "OK", onPress: () => router.replace("/auth/login") },
+          ]);
         } else {
           Alert.alert(
             "Verification Failed",
-            (response.error || (response as any)?.data?.message || "Invalid OTP. Please try again.") as string
+            response.error ||
+              (response as any)?.data?.message ||
+              "Invalid OTP. Please try again."
           );
         }
       } catch (error: any) {
-        Alert.alert(
-          "Error",
-          error.message || "Failed to verify OTP. Please try again."
-        );
+        Alert.alert("Error", error.message || "Something went wrong.");
       } finally {
         setIsVerifying(false);
       }
@@ -103,34 +102,61 @@ export default function OTPVerificationScreen() {
       }
       await api.post("/auth/register/init", { email });
       Alert.alert("OTP Resent", "A new OTP has been sent to your email.");
-    } catch (error) {
+    } catch {
       Alert.alert("Error", "Failed to resend OTP. Please try again.");
     }
   };
 
   return (
     <KeyboardAvoidingView
-      style={globalStyles.container}
+      style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
+      {/* Background Gradient */}
+      <LinearGradient
+        colors={[COLORS.primary, COLORS.secondary]}
+        style={StyleSheet.absoluteFillObject}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      />
+
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <View style={styles.content}>
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={[globalStyles.h1, styles.title]}>
-              Verify Your Email
+        <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
+          {/* Logo Section */}
+          <View style={styles.logoSection}>
+            <View style={styles.logoContainer}>
+              <Image
+                source={require("../../assets/2.png")}
+                style={styles.appIcon}
+                resizeMode="contain"
+              />
+            </View>
+            <Text style={[globalStyles.displayMedium, styles.appTitle]}>
+              Civil Quest
             </Text>
-            <Text style={[globalStyles.body, styles.subtitle]}>
-              We've sent a 6-digit verification code to{"\n"}
-              <Text style={styles.email}>{email || "(no email)"}</Text>
+            <Text style={[globalStyles.body, styles.appSubtitle]}>
+              Secure Account Verification
             </Text>
           </View>
 
-          {/* Form */}
-          <View style={styles.form}>
+          {/* OTP Card */}
+          <View style={styles.formCard}>
+            {/* Header */}
+            <View style={styles.formHeader}>
+              <Text style={[globalStyles.h2, styles.title]}>
+                Verify Your Email
+              </Text>
+              <Text style={[globalStyles.body, styles.subtitle]}>
+                Enter the 6-digit code sent to{" "}
+                <Text style={styles.email}>{email || "(no email)"}</Text>
+              </Text>
+            </View>
+
+            {/* Input */}
             <InputField
               label="Verification Code"
               placeholder="Enter 6-digit code"
@@ -138,10 +164,11 @@ export default function OTPVerificationScreen() {
               error={touched.otp ? errors.otp : undefined}
               keyboardType="numeric"
               maxLength={6}
-              autoFocus
               required
+              variant="filled"
             />
 
+            {/* Buttons */}
             <Button
               title="Verify & Complete Registration"
               variant="primary"
@@ -159,40 +186,84 @@ export default function OTPVerificationScreen() {
               fullWidth
               style={styles.resendButton}
             />
-          </View>
 
-          {/* Footer */}
-          <View style={styles.footer}>
+            {/* Footer */}
             <Text style={[globalStyles.body, styles.footerText]}>
-              Didn't receive the code? Check your spam folder or{" "}
+              Didn’t receive the code?{" "}
               <Text style={styles.link} onPress={handleResendOTP}>
-                resend it
+                Resend
               </Text>
             </Text>
           </View>
-        </View>
+        </Animated.View>
       </ScrollView>
+
+      {/* Loading Overlay */}
+      <Loading
+        visible={isVerifying}
+        message="Verifying your account..."
+        variant="overlay"
+        fullScreen
+      />
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+  },
   scrollContainer: {
     flexGrow: 1,
     justifyContent: "center",
+    paddingVertical: SPACING.huge,
   },
   content: {
-    padding: SPACING.lg,
-    justifyContent: "center",
-    minHeight: "80%",
+    paddingHorizontal: SPACING.xl,
   },
-  header: {
+
+  // Logo Section
+  logoSection: {
     alignItems: "center",
-    marginBottom: SPACING.xl,
+    marginBottom: SPACING.huge,
+  },
+  logoContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: COLORS.white + "20",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: SPACING.lg,
+    ...LAYOUT.shadows.md,
+  },
+  appTitle: {
+    color: COLORS.white,
+    textAlign: "center",
+    marginBottom: SPACING.sm,
+  },
+  appSubtitle: {
+    color: COLORS.white + "CC",
+    textAlign: "center",
+  },
+
+  // OTP Card
+  formCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: LAYOUT.borderRadius.xxl,
+    padding: SPACING.huge,
+    marginBottom: SPACING.huge,
+    ...LAYOUT.shadows.lg,
+  },
+  formHeader: {
+    alignItems: "center",
+    marginBottom: SPACING.huge,
   },
   title: {
     textAlign: "center",
-    marginBottom: SPACING.sm,
+    marginBottom: SPACING.md,
+    color: COLORS.textPrimary,
   },
   subtitle: {
     textAlign: "center",
@@ -202,19 +273,15 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: COLORS.primary,
   },
-  form: {
-    marginBottom: SPACING.xl,
-  },
+
   verifyButton: {
     marginTop: SPACING.lg,
     marginBottom: SPACING.md,
   },
   resendButton: {
-    marginTop: SPACING.sm,
+    marginBottom: SPACING.lg,
   },
-  footer: {
-    alignItems: "center",
-  },
+
   footerText: {
     textAlign: "center",
     color: COLORS.textSecondary,
@@ -222,5 +289,10 @@ const styles = StyleSheet.create({
   link: {
     color: COLORS.primary,
     fontWeight: "600",
+  },
+
+  appIcon: {
+    width: 40,
+    height: 40,
   },
 });

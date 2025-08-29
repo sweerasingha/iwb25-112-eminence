@@ -7,13 +7,16 @@ import {
   Platform,
   ScrollView,
   Alert,
+  Animated,
+  Image,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { z } from "zod";
+import { LinearGradient } from "expo-linear-gradient";
 
 import { Button, InputField } from "../../components";
 import { useForm } from "../../hooks";
-import { globalStyles, COLORS, SPACING } from "../../theme";
+import { globalStyles, COLORS, SPACING, LAYOUT } from "../../theme";
 import { api } from "../../services/api";
 
 const emailSchema = z.object({
@@ -47,6 +50,16 @@ export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fadeAnim] = useState(new Animated.Value(0));
+
+  // Animate fade-in
+  React.useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true,
+    }).start();
+  }, []);
 
   // Email form
   const emailForm = useForm<EmailFormData>({ email: "" }, emailSchema);
@@ -146,8 +159,8 @@ export default function ForgotPasswordScreen() {
 
   const renderEmailStep = () => (
     <>
-      <View style={styles.header}>
-        <Text style={[globalStyles.h1, styles.title]}>Reset Password</Text>
+      <View style={styles.formHeader}>
+        <Text style={[globalStyles.h2, styles.title]}>Reset Password</Text>
         <Text style={[globalStyles.body, styles.subtitle]}>
           Enter your email address and we'll send you a code to reset your
           password
@@ -156,9 +169,7 @@ export default function ForgotPasswordScreen() {
 
       {error && (
         <View style={styles.errorContainer}>
-          <Text style={[globalStyles.errorText, styles.errorText]}>
-            {error}
-          </Text>
+          <Text style={styles.errorText}>{error}</Text>
         </View>
       )}
 
@@ -172,6 +183,7 @@ export default function ForgotPasswordScreen() {
           keyboardType="email-address"
           autoFocus
           required
+          variant="filled"
         />
 
         <Button
@@ -189,8 +201,8 @@ export default function ForgotPasswordScreen() {
 
   const renderResetStep = () => (
     <>
-      <View style={styles.header}>
-        <Text style={[globalStyles.h1, styles.title]}>Enter Reset Code</Text>
+      <View style={styles.formHeader}>
+        <Text style={[globalStyles.h2, styles.title]}>Enter Reset Code</Text>
         <Text style={[globalStyles.body, styles.subtitle]}>
           We've sent a 6-digit code to{"\n"}
           <Text style={styles.email}>{email}</Text>
@@ -199,9 +211,7 @@ export default function ForgotPasswordScreen() {
 
       {error && (
         <View style={styles.errorContainer}>
-          <Text style={[globalStyles.errorText, styles.errorText]}>
-            {error}
-          </Text>
+          <Text style={styles.errorText}>{error}</Text>
         </View>
       )}
 
@@ -215,6 +225,7 @@ export default function ForgotPasswordScreen() {
           maxLength={6}
           autoFocus
           required
+          variant="filled"
         />
 
         <InputField
@@ -228,6 +239,7 @@ export default function ForgotPasswordScreen() {
           }
           secureTextEntry
           required
+          variant="filled"
         />
 
         <Button
@@ -253,47 +265,121 @@ export default function ForgotPasswordScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={globalStyles.container}
+      style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
+      {/* Gradient background */}
+      <LinearGradient
+        colors={[COLORS.primary, COLORS.secondary]}
+        style={StyleSheet.absoluteFillObject}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      />
+
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <View style={styles.content}>
-          {step === "email" ? renderEmailStep() : renderResetStep()}
-
-          <View style={styles.footer}>
-            <Text style={[globalStyles.body, styles.footerText]}>
-              Remember your password?{" "}
-              <Text style={styles.link} onPress={() => router.back()}>
-                Back to Login
-              </Text>
+        <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
+          {/* Logo Section */}
+          <View style={styles.logoSection}>
+            <View style={styles.logoContainer}>
+              <Image
+                source={require("../../assets/2.png")}
+                style={styles.appIcon}
+                resizeMode="contain"
+              />
+            </View>
+            <Text style={[globalStyles.displayMedium, styles.appTitle]}>
+              Civil Quest
+            </Text>
+            <Text style={[globalStyles.body, styles.appSubtitle]}>
+              Reset your account password
             </Text>
           </View>
-        </View>
+
+          {/* Card Form */}
+          <View style={styles.formCard}>
+            {step === "email" ? renderEmailStep() : renderResetStep()}
+
+            <View style={styles.footer}>
+              <Text style={[globalStyles.body, styles.footerText]}>
+                Remember your password?{" "}
+                <Text
+                  style={styles.link}
+                  onPress={() => router.replace("/auth/login")}
+                >
+                  Back to Login
+                </Text>
+              </Text>
+            </View>
+          </View>
+        </Animated.View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+  },
   scrollContainer: {
     flexGrow: 1,
     justifyContent: "center",
+    paddingVertical: SPACING.huge,
   },
   content: {
-    padding: SPACING.lg,
-    justifyContent: "center",
-    minHeight: "80%",
+    paddingHorizontal: SPACING.xl,
   },
-  header: {
+
+  // Logo
+  logoSection: {
+    alignItems: "center",
+    marginBottom: SPACING.huge,
+  },
+  logoContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: COLORS.white + "20",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: SPACING.lg,
+    ...LAYOUT.shadows.md,
+  },
+  appIcon: {
+    width: 40,
+    height: 40,
+  },
+  appTitle: {
+    color: COLORS.white,
+    textAlign: "center",
+    marginBottom: SPACING.sm,
+  },
+  appSubtitle: {
+    color: COLORS.white + "CC",
+    textAlign: "center",
+  },
+
+  // Form Card
+  formCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: LAYOUT.borderRadius.xxl,
+    padding: SPACING.huge,
+    marginBottom: SPACING.huge,
+    ...LAYOUT.shadows.lg,
+  },
+  formHeader: {
     alignItems: "center",
     marginBottom: SPACING.xl,
   },
   title: {
     textAlign: "center",
     marginBottom: SPACING.sm,
+    color: COLORS.textPrimary,
   },
   subtitle: {
     textAlign: "center",
@@ -303,17 +389,23 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: COLORS.primary,
   },
+
+  // Error
   errorContainer: {
-    backgroundColor: COLORS.error + "10",
+    backgroundColor: COLORS.errorBg,
     padding: SPACING.md,
-    borderRadius: 8,
+    borderRadius: LAYOUT.borderRadius.lg,
     marginBottom: SPACING.lg,
     borderLeftWidth: 4,
     borderLeftColor: COLORS.error,
   },
   errorText: {
     textAlign: "center",
+    color: COLORS.error,
+    fontWeight: "500",
   },
+
+  // Form
   form: {
     marginBottom: SPACING.xl,
   },
@@ -324,8 +416,13 @@ const styles = StyleSheet.create({
   resendButton: {
     marginTop: SPACING.sm,
   },
+
+  // Footer
   footer: {
     alignItems: "center",
+    paddingTop: SPACING.md,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.borderLight,
   },
   footerText: {
     textAlign: "center",
