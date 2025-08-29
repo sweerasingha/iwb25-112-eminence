@@ -373,6 +373,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     minHeight: 44,
+    width: "50%",
   },
   sponsorAction: {
     backgroundColor: COLORS.primary,

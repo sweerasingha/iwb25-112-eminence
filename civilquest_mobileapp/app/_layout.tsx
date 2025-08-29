@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Stack } from "expo-router";
 import { Provider } from "react-redux";
-import { SafeAreaProvider } from "react-native-safe-area-context";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { ActivityIndicator, View } from "react-native";
 import Toast from "react-native-toast-message";
@@ -41,23 +41,24 @@ export default function RootLayout() {
   }
   return (
     <Provider store={store}>
-      <SafeAreaProvider style={{ flex: 1 }}>
-        <StatusBar style="auto" backgroundColor={COLORS.background} />
-        <AuthInitializer>
-          <Stack>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen
-              name="auth"
-              options={{
-                headerShown: false,
-                presentation: "modal",
-              }}
-            />
-            <Stack.Screen name="events" options={{ headerShown: false }} />
-            <Stack.Screen name="profile" options={{ headerShown: false }} />
-          </Stack>
-        </AuthInitializer>
-        <Toast config={toastConfig} />
+      <SafeAreaProvider>
+        <SafeAreaView style={{ flex: 1 }} edges={["top", "right", "left"]}>
+          <View style={{ flex: 1 }}>
+            <StatusBar style="auto" backgroundColor={COLORS.background} />
+            <AuthInitializer>
+              <Stack>
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen
+                  name="auth"
+                  options={{ headerShown: false, presentation: "modal" }}
+                />
+                <Stack.Screen name="events" options={{ headerShown: false }} />
+                <Stack.Screen name="profile" options={{ headerShown: false }} />
+              </Stack>
+            </AuthInitializer>
+            <Toast config={toastConfig} />
+          </View>
+        </SafeAreaView>
       </SafeAreaProvider>
     </Provider>
   );
