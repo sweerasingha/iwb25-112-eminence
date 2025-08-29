@@ -268,6 +268,72 @@ public function getSponsors(http:Caller caller, http:Request req) returns error?
     check caller->respond(<http:Ok>{body: sponsorList});
 }
 
+// Get sponsors created by the currently logged-in user
+public function getUserSponsors(http:Caller caller, http:Request req) returns error? {
+    string|error? authHeader = req.getHeader("Authorization");
+    if authHeader is error || authHeader is () {
+        return utils:unauthorized(caller);
+    }
+
+    string tokenStr = (<string>authHeader).substring(7);
+    string|error extracted = token:extractUserId(tokenStr);
+    if extracted is error {
+        return utils:unauthorized(caller);
+    }
+    string userId = <string>extracted;
+
+    map<string[]> queryParams = req.getQueryParams();
+    map<json> filter = {"userId": userId};
+
+    if queryParams.hasKey("eventId") {
+        string[]? eventIdArray = queryParams["eventId"];
+        if eventIdArray is string[] && eventIdArray.length() > 0 {
+            filter["eventId"] = eventIdArray[0];
+        }
+    }
+
+    if queryParams.hasKey("approvedStatus") {
+        string[]? statusArray = queryParams["approvedStatus"];
+        if statusArray is string[] && statusArray.length() > 0 {
+            filter["approvedStatus"] = statusArray[0];
+        }
+    }
+
+    map<json> sortSpec = {"createdAt": -1};
+    stream<Sponsor, error?>|error sponsors = sponsorCollection->find(filter, {"sort": sortSpec});
+    if sponsors is error {
+        return utils:serverError(caller);
+    }
+
+    map<anydata>[] enriched = [];
+    check sponsors.forEach(function(Sponsor s) {
+        string eventTitle = "";
+        record {}|error|() ev = eventCollection->findOne({"_id": s.eventId});
+        if ev is record {} && ev.hasKey("eventTitle") {
+            eventTitle = ev["eventTitle"].toString();
+        }
+
+        float? normalizedAmount = ();
+        if s.amount is float {
+            normalizedAmount = s.amount;
+        } else if s.donationAmount is float {
+            normalizedAmount = s.donationAmount;
+        }
+
+        map<anydata> row = {
+            sponsorType: s.sponsorType,
+            description: s.description,
+            amount: normalizedAmount,
+            approvedStatus: s.approvedStatus,
+            eventTitle: eventTitle,
+            createdAt: s.createdAt
+        };
+        enriched.push(row);
+    });
+
+    check caller->respond(<http:Ok>{body: enriched});
+}
+
 // Get single sponsor by ID
 public isolated function getSponsor(http:Caller caller, http:Request req, string sponsorId) returns error? {
     Sponsor|error|() sponsor = sponsorCollection->findOne({"_id": sponsorId});
