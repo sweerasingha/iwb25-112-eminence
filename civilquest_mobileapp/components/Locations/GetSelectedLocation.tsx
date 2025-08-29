@@ -87,7 +87,6 @@ export default function GetSelectedLocation({
         onChangeText={setQuery}
         error={validationError}
         leftIcon="location"
-        variant="filled"
       />
 
       {error ? <Text style={styles.error}>{error}</Text> : null}

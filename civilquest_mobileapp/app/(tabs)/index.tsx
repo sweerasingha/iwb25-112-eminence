@@ -94,36 +94,7 @@ export default function HomeScreen() {
     </View>
   );
 
-  const renderStats = () => {
-    const totalEvents = filteredEvents.length;
-    const approvedEvents = filteredEvents.filter(
-      (e) => e.status === "APPROVED"
-    ).length;
-    const pendingEvents = filteredEvents.filter(
-      (e) => e.status === "PENDING"
-    ).length;
 
-    return (
-      <View style={styles.statsContainer}>
-        <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{totalEvents}</Text>
-          <Text style={styles.statLabel}>Total Events</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={[styles.statNumber, { color: COLORS.success }]}>
-            {approvedEvents}
-          </Text>
-          <Text style={styles.statLabel}>Approved</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={[styles.statNumber, { color: COLORS.warning }]}>
-            {pendingEvents}
-          </Text>
-          <Text style={styles.statLabel}>Pending</Text>
-        </View>
-      </View>
-    );
-  };
 
   const headerOpacity = scrollY.interpolate({
     inputRange: [0, 100],

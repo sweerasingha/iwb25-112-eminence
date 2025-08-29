@@ -9,11 +9,14 @@ import {
   TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { COLORS, SPACING, LAYOUT } from "theme";
+import { COLORS, SPACING, LAYOUT, FONTS } from "theme";
+import { InputField } from "./InputField";
 
 interface ComboBoxProps {
   label: string;
   value: string;
+  error?: string;
+  helperText?: string;
   options: string[];
   onChange: (value: string) => void;
   placeholder?: string;
@@ -24,6 +27,8 @@ export const ComboBox: React.FC<ComboBoxProps> = ({
   value,
   options,
   onChange,
+  error,
+  helperText,
   placeholder = "Select option",
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
@@ -54,18 +59,34 @@ export const ComboBox: React.FC<ComboBoxProps> = ({
         onPress={() => setModalVisible(true)}
       >
         <Text
-          style={{ color: value ? COLORS.textPrimary : COLORS.textTertiary }}
+          style={{
+            color: value ? COLORS.textPrimary : COLORS.textTertiary,
+            fontSize: 16,
+          }}
         >
           {value || placeholder}
         </Text>
         <Ionicons name="chevron-down" size={20} color={COLORS.textSecondary} />
       </TouchableOpacity>
+      {/* Helper Text or Error */}
+      {(error || helperText) && (
+        <View style={styles.feedbackContainer}>
+          {error ? (
+            <View style={styles.errorContainer}>
+              <Ionicons name="alert-circle" size={16} color={COLORS.error} />
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          ) : (
+            <Text style={styles.helperText}>{helperText}</Text>
+          )}
+        </View>
+      )}
 
       <Modal visible={modalVisible} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
             {options.length > 5 && (
-              <TextInput
+              <InputField
                 style={styles.searchInput}
                 placeholder="Search..."
                 value={search}
@@ -113,10 +134,10 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   input: {
-    borderWidth: 1,
-    borderColor: COLORS.backgroundSecondary,
+    borderWidth: 2,
+    borderColor: COLORS.border,
     borderRadius: LAYOUT.borderRadius.md,
-    padding: SPACING.md,
+    padding: SPACING.xl,
     fontSize: 16,
     color: COLORS.textPrimary,
     backgroundColor: COLORS.surface,
@@ -162,5 +183,25 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: COLORS.primary,
+  },
+  // Feedback
+  feedbackContainer: {
+    marginTop: SPACING.md,
+  },
+  errorContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  errorText: {
+    fontSize: FONTS.sizes.sm,
+    color: COLORS.error,
+    fontWeight: FONTS.weights.medium,
+    marginLeft: SPACING.sm,
+    flex: 1,
+  },
+  helperText: {
+    fontSize: FONTS.sizes.sm,
+    color: COLORS.textTertiary,
+    fontWeight: FONTS.weights.regular,
   },
 });

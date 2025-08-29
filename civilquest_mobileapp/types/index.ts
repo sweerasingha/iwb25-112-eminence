@@ -212,6 +212,7 @@ export interface CreateEventRequest {
   startTime: string;
   endTime: string;
   location: string;
+  province:string;
   city: string;
   reward: string;
   longitude: number;

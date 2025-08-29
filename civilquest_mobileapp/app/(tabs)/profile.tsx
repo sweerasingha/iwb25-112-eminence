@@ -14,7 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 
-import { Button, Loading } from "../../components";
+import { Button, InputField, Loading } from "../../components";
 import { useAuth } from "../../hooks";
 import { globalStyles, COLORS, SPACING, LAYOUT } from "../../theme";
 import { userService } from "../../services/user";
@@ -324,33 +324,26 @@ export default function ProfileScreen() {
         </View>
 
         <ScrollView style={styles.modalContent}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Username</Text>
-            <TextInput
-              style={styles.input}
-              value={editForm.username}
-              onChangeText={(text) =>
-                setEditForm((prev) => ({ ...prev, username: text }))
-              }
-              placeholder="Enter username"
-              placeholderTextColor={COLORS.textTertiary}
-            />
-          </View>
+          <InputField
+            label="Username"
+            value={editForm.username}
+            onChangeText={(text) =>
+              setEditForm((prev) => ({ ...prev, username: text }))
+            }
+            placeholder="Enter username"
+            placeholderTextColor={COLORS.textTertiary}
+          />
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Address</Text>
-            <TextInput
-              style={styles.input}
-              value={editForm.address}
-              onChangeText={(text) =>
-                setEditForm((prev) => ({ ...prev, address: text }))
-              }
-              placeholder="Enter address"
-              placeholderTextColor={COLORS.textTertiary}
-              multiline
-            />
-          </View>
-
+          <InputField
+            label="Address"
+            value={editForm.address}
+            onChangeText={(text) =>
+              setEditForm((prev) => ({ ...prev, address: text }))
+            }
+            placeholder="Enter address"
+            placeholderTextColor={COLORS.textTertiary}
+            multiline
+          />
           <View style={styles.inputGroup}>
             <ComboBox
               label="Hometown"
@@ -384,18 +377,15 @@ export default function ProfileScreen() {
             />
           </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>National ID</Text>
-            <TextInput
-              style={styles.input}
-              value={editForm.nationalid}
-              onChangeText={(text) =>
-                setEditForm((prev) => ({ ...prev, nationalid: text }))
-              }
-              placeholder="Enter national ID"
-              placeholderTextColor={COLORS.textTertiary}
-            />
-          </View>
+          <InputField
+            label="National ID"
+            value={editForm.nationalid}
+            onChangeText={(text) =>
+              setEditForm((prev) => ({ ...prev, nationalid: text }))
+            }
+            placeholder="Enter national ID"
+            placeholderTextColor={COLORS.textTertiary}
+          />
 
           <Button
             title="Update Profile"
@@ -574,7 +564,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: SPACING.sm,
+    paddingVertical: SPACING.lg,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.backgroundSecondary,
   },
@@ -648,10 +638,9 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   input: {
-    borderWidth: 1,
-    borderColor: COLORS.backgroundSecondary,
+    borderColor: COLORS.border,
     borderRadius: LAYOUT.borderRadius.md,
-    padding: SPACING.md,
+    padding: SPACING.xl,
     fontSize: 16,
     color: COLORS.textPrimary,
     backgroundColor: COLORS.surface,
