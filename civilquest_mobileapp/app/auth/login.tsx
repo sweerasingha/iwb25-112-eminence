@@ -120,7 +120,7 @@ export default function LoginScreen() {
               Civil Quest
             </Text>
             <Text style={[globalStyles.body, styles.appSubtitle]}>
-              Engineering Events Platform
+              New Era of Community Service
             </Text>
           </View>
 

@@ -6,6 +6,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  TouchableOpacity,
 } from "react-native";
 import { Link, useRouter } from "expo-router";
 
@@ -14,6 +15,7 @@ import { useAuth, useForm } from "../../hooks";
 import { globalStyles, COLORS, SPACING } from "../../theme";
 import { SignupFormData, signupSchema } from "../../utils/schemas";
 import { api } from "../../services/api";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function SignUpScreen() {
   const router = useRouter();
@@ -143,12 +145,15 @@ export default function SignUpScreen() {
               secureTextEntry={!showPassword}
               required
               rightIcon={
-                <Text
-                  style={styles.passwordToggle}
-                  onPress={() => setShowPassword(!showPassword)}
+                <TouchableOpacity
+                  onPress={() => setShowPassword((prev) => !prev)}
                 >
-                  {showPassword ? "show" : "hide"}
-                </Text>
+                  <Ionicons
+                    name={showPassword ? "eye-off" : "eye"}
+                    size={20}
+                    color={COLORS.textTertiary}
+                  />
+                </TouchableOpacity>
               }
             />
 
@@ -162,12 +167,15 @@ export default function SignUpScreen() {
               secureTextEntry={!showConfirmPassword}
               required
               rightIcon={
-                <Text
-                  style={styles.passwordToggle}
-                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                <TouchableOpacity
+                  onPress={() => setShowConfirmPassword((prev) => !prev)}
                 >
-                  {showConfirmPassword ? "show" : "hide"}
-                </Text>
+                  <Ionicons
+                    name={showConfirmPassword ? "eye-off" : "eye"}
+                    size={20}
+                    color={COLORS.textTertiary}
+                  />
+                </TouchableOpacity>
               }
             />
 

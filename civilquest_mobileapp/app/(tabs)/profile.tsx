@@ -14,11 +14,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 
-import { Button, Loading } from "../../components";
+import { Button, InputField, Loading } from "../../components";
 import { useAuth } from "../../hooks";
 import { globalStyles, COLORS, SPACING, LAYOUT } from "../../theme";
 import { userService } from "../../services/user";
 import { User } from "../../types";
+import { ComboBox } from "components/UI/ComboBox";
+import { mainCities } from "utils/cities";
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -89,7 +91,7 @@ export default function ProfileScreen() {
       if (response.success) {
         Alert.alert("Success", "Profile updated successfully");
         setEditModalVisible(false);
-        await loadProfile(); 
+        await loadProfile();
       } else {
         Alert.alert("Error", response.error || "Failed to update profile");
       }
@@ -202,13 +204,6 @@ export default function ProfileScreen() {
           <Text style={styles.statValue}>{profile?.verified ? "✓" : "✗"}</Text>
           <Text style={styles.statLabel}>Verified</Text>
         </View>
-        <View style={styles.statDivider} />
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>
-            {profile?.otpVerified ? "✓" : "✗"}
-          </Text>
-          <Text style={styles.statLabel}>OTP Verified</Text>
-        </View>
       </View>
     </LinearGradient>
   );
@@ -223,11 +218,7 @@ export default function ProfileScreen() {
           label="Username"
           value={profile?.username || "Not set"}
         />
-        <DetailRow
-          icon="call-outline"
-          label="Phone Number"
-          value={profile?.phoneNumber || "Not set"}
-        />
+
         <DetailRow
           icon="location-outline"
           label="Address"
@@ -333,84 +324,68 @@ export default function ProfileScreen() {
         </View>
 
         <ScrollView style={styles.modalContent}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Username</Text>
-            <TextInput
-              style={styles.input}
-              value={editForm.username}
-              onChangeText={(text) =>
-                setEditForm((prev) => ({ ...prev, username: text }))
-              }
-              placeholder="Enter username"
-              placeholderTextColor={COLORS.textTertiary}
-            />
-          </View>
+          <InputField
+            label="Username"
+            value={editForm.username}
+            onChangeText={(text) =>
+              setEditForm((prev) => ({ ...prev, username: text }))
+            }
+            placeholder="Enter username"
+            placeholderTextColor={COLORS.textTertiary}
+          />
 
+          <InputField
+            label="Address"
+            value={editForm.address}
+            onChangeText={(text) =>
+              setEditForm((prev) => ({ ...prev, address: text }))
+            }
+            placeholder="Enter address"
+            placeholderTextColor={COLORS.textTertiary}
+            multiline
+          />
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Address</Text>
-            <TextInput
-              style={styles.input}
-              value={editForm.address}
-              onChangeText={(text) =>
-                setEditForm((prev) => ({ ...prev, address: text }))
-              }
-              placeholder="Enter address"
-              placeholderTextColor={COLORS.textTertiary}
-              multiline
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Hometown</Text>
-            <TextInput
-              style={styles.input}
+            <ComboBox
+              label="Hometown"
               value={editForm.hometown}
-              onChangeText={(text) =>
-                setEditForm((prev) => ({ ...prev, hometown: text }))
+              options={mainCities}
+              onChange={(value) =>
+                setEditForm((prev) => ({ ...prev, hometown: value }))
               }
-              placeholder="Enter hometown"
-              placeholderTextColor={COLORS.textTertiary}
             />
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Living City</Text>
-            <TextInput
-              style={styles.input}
+            <ComboBox
+              label="Living City"
               value={editForm.livingCity}
-              onChangeText={(text) =>
-                setEditForm((prev) => ({ ...prev, livingCity: text }))
+              options={mainCities}
+              onChange={(value) =>
+                setEditForm((prev) => ({ ...prev, livingCity: value }))
               }
-              placeholder="Enter living city"
-              placeholderTextColor={COLORS.textTertiary}
             />
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Gender</Text>
-            <TextInput
-              style={styles.input}
+            <ComboBox
+              label="Gender"
               value={editForm.gender}
-              onChangeText={(text) =>
-                setEditForm((prev) => ({ ...prev, gender: text }))
+              options={["Male", "Female", "Other"]}
+              onChange={(value) =>
+                setEditForm((prev) => ({ ...prev, gender: value }))
               }
-              placeholder="Enter gender (e.g., Male, Female, Other)"
-              placeholderTextColor={COLORS.textTertiary}
             />
           </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>National ID</Text>
-            <TextInput
-              style={styles.input}
-              value={editForm.nationalid}
-              onChangeText={(text) =>
-                setEditForm((prev) => ({ ...prev, nationalid: text }))
-              }
-              placeholder="Enter national ID"
-              placeholderTextColor={COLORS.textTertiary}
-            />
-          </View>
+          <InputField
+            label="National ID"
+            value={editForm.nationalid}
+            onChangeText={(text) =>
+              setEditForm((prev) => ({ ...prev, nationalid: text }))
+            }
+            placeholder="Enter national ID"
+            placeholderTextColor={COLORS.textTertiary}
+          />
 
           <Button
             title="Update Profile"
@@ -589,7 +564,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: SPACING.sm,
+    paddingVertical: SPACING.lg,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.backgroundSecondary,
   },
@@ -663,10 +638,9 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   input: {
-    borderWidth: 1,
-    borderColor: COLORS.backgroundSecondary,
+    borderColor: COLORS.border,
     borderRadius: LAYOUT.borderRadius.md,
-    padding: SPACING.md,
+    padding: SPACING.xl,
     fontSize: 16,
     color: COLORS.textPrimary,
     backgroundColor: COLORS.surface,

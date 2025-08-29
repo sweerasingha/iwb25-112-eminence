@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { useSelector } from "react-redux";
-import { z } from "zod";
+import { set, z } from "zod";
 import { RootState } from "../../store";
 import {
   InputField,
@@ -29,6 +29,9 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as ImagePicker from "expo-image-picker";
 import { GetSelectedLocation } from "../../components";
 import { useForm } from "../../hooks";
+import { ComboBox } from "components/UI/ComboBox";
+import { cityWithProvince } from "utils/citiesWithProvince";
+import { eventTypes } from "utils/eventTypes";
 
 const { width } = Dimensions.get("window");
 
@@ -36,6 +39,7 @@ const { width } = Dimensions.get("window");
 const createEventSchema = z.object({
   eventTitle: z.string().min(1, "Event title is required"),
   eventDescription: z.string().min(1, "Event description is required"),
+  province: z.string().min(1, "Province is required"),
   city: z.string().min(1, "City is required"),
   eventType: z.string().min(1, "Event type is required"),
   reward: z
@@ -72,6 +76,7 @@ export default function CreateEventScreen() {
     {
       eventTitle: "",
       eventDescription: "",
+      province: "",
       city: "",
       eventType: "",
       reward: "",
@@ -165,6 +170,7 @@ export default function CreateEventScreen() {
         eventType: formData.eventType.trim(),
         eventDescription: formData.eventDescription.trim(),
         location: location!.displayName.trim(),
+        province: formData.province.trim(),
         city: formData.city.trim(),
         date: dateString,
         startTime: eventTime,
@@ -374,13 +380,24 @@ export default function CreateEventScreen() {
             validationError={locationError}
             setLocation={setLocation}
           />
+          <ComboBox
+            label="Province"
+            value={formData.province}
+            options={cityWithProvince.map((item) => item.Province)}
+            onChange={(value) => handleChange("province", value)}
+            error={errors.province}
+          />
 
-          <InputField
+          <ComboBox
             label="City"
-            placeholder="City where event takes place"
-            {...getFieldProps("city")}
-            error={touched.city ? errors.city : undefined}
-            required
+            value={formData.city}
+            options={
+              cityWithProvince.find(
+                (item) => item.Province === formData.province
+              )?.cites || []
+            }
+            onChange={(value) => handleChange("city", value)}
+            error={errors.city}
           />
 
           <CustomDateTimePicker
@@ -412,12 +429,12 @@ export default function CreateEventScreen() {
             required
           />
 
-          <InputField
+          <ComboBox
             label="Event Type"
-            placeholder="e.g., Environmental, Construction, Social"
-            {...getFieldProps("eventType")}
-            error={touched.eventType ? errors.eventType : undefined}
-            required
+            value={formData.eventType}
+            options={eventTypes}
+            onChange={(value) => handleChange("eventType", value)}
+            error={errors.eventType}
           />
 
           <InputField

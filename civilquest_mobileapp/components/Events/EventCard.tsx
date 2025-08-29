@@ -224,7 +224,7 @@ export const EventCard: React.FC<EventCardProps> = ({
               />
               <Text style={styles.participationText}>
                 {event.userApplicationStatus.method === "WILL_JOIN"
-                  ? "Joining"
+                  ? "Wil Join"
                   : "Interested"}
               </Text>
             </View>
@@ -339,7 +339,7 @@ export const EventCard: React.FC<EventCardProps> = ({
             >
               <Text style={styles.participationText}>
                 {event.userApplicationStatus?.method === "WILL_JOIN"
-                  ? " Joining"
+                  ? " Will Join"
                   : " Interested"}
               </Text>
             </View>

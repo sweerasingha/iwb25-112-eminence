@@ -78,6 +78,7 @@ class EventService {
     data.append("startTime", eventData.startTime);
     data.append("endTime", eventData.endTime);
     data.append("location", sanitizeForApi(eventData.location));
+    data.append("province", eventData.province);
     data.append("city", eventData.city);
     data.append("eventTitle", sanitizeForApi(eventData.eventTitle));
     data.append("eventType", eventData.eventType);

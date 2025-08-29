@@ -256,7 +256,7 @@ export const LeaderboardFilters: React.FC<LeaderboardFiltersProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: { gap: SPACING.lg },
+  container: { gap: SPACING.sm,marginTop:SPACING.lg },
   filterButtons: { flexDirection: "row", gap: SPACING.md },
   filterButton: {
     flex: 1,

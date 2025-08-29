@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { View, Text, StyleSheet, RefreshControl, Animated } from "react-native";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -8,6 +8,7 @@ import { EventCard, SearchAndFilter, Header, Loading } from "../../components";
 import { useEvents } from "../../hooks";
 import { globalStyles, COLORS, SPACING, LAYOUT } from "../../theme";
 import { Event } from "../../types";
+import { useFocusEffect } from "@react-navigation/native";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -26,9 +27,11 @@ export default function HomeScreen() {
   const [scrollY] = useState(new Animated.Value(0));
   const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    loadEvents();
-  }, [loadEvents]);
+  useFocusEffect(
+    useCallback(() => {
+      loadEvents();
+    }, [])
+  );
 
   const handleEventPress = (event: Event) => {
     router.push({
@@ -91,36 +94,7 @@ export default function HomeScreen() {
     </View>
   );
 
-  const renderStats = () => {
-    const totalEvents = filteredEvents.length;
-    const approvedEvents = filteredEvents.filter(
-      (e) => e.status === "APPROVED"
-    ).length;
-    const pendingEvents = filteredEvents.filter(
-      (e) => e.status === "PENDING"
-    ).length;
 
-    return (
-      <View style={styles.statsContainer}>
-        <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{totalEvents}</Text>
-          <Text style={styles.statLabel}>Total Events</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={[styles.statNumber, { color: COLORS.success }]}>
-            {approvedEvents}
-          </Text>
-          <Text style={styles.statLabel}>Approved</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={[styles.statNumber, { color: COLORS.warning }]}>
-            {pendingEvents}
-          </Text>
-          <Text style={styles.statLabel}>Pending</Text>
-        </View>
-      </View>
-    );
-  };
 
   const headerOpacity = scrollY.interpolate({
     inputRange: [0, 100],
@@ -147,7 +121,7 @@ export default function HomeScreen() {
         >
           <Header
             title="Civil Quest"
-            subtitle="Discover Engineering Events"
+            subtitle="New Era of Community Service"
             variant="transparent"
           />
         </LinearGradient>

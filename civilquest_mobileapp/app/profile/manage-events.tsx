@@ -11,6 +11,7 @@ import {
 } from "../../components/EventManagement";
 import { globalStyles, COLORS, SPACING } from "../../theme";
 import { useManageEvents } from "../../hooks/useManageEvents";
+import { Loading } from "components";
 
 export default function ManageMyEventsScreen() {
   const {
@@ -44,7 +45,7 @@ export default function ManageMyEventsScreen() {
       selectedEventId={selectedEvent?.id}
     />
   );
- 
+
   return (
     <PremiumAccessGuard isPremium={isPremium}>
       <View style={[globalStyles.container, { flex: 1 }]}>
@@ -54,7 +55,13 @@ export default function ManageMyEventsScreen() {
         />
 
         {myEvents.loading === "loading" && myEvents.data.length === 0 ? (
-          <LoadingState />
+          <View style={globalStyles.centerContainer}>
+            <Loading
+              visible={true}
+              message="Loading events..."
+              variant="overlay"
+            />
+          </View>
         ) : myEvents.data.length === 0 ? (
           <EmptyEventsState onCreateEvent={handleCreateEvent} />
         ) : (

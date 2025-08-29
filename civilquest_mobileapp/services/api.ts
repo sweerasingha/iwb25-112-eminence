@@ -136,7 +136,6 @@ class ApiService {
           });
         }
 
-    
         console.error(
           (error.response?.data as any)?.errors?.[0] ||
             (error.response?.data as any)?.error ||
@@ -206,7 +205,6 @@ class ApiService {
     try {
       const response = await this.axiosInstance.request<T>(config);
 
-    
       const responseData = response.data as any;
 
       // If the backend response has a success field, use it

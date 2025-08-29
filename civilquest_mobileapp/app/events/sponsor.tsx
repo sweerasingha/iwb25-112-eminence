@@ -51,7 +51,7 @@ export default function SponsorEventScreen() {
     {
       sponsorType: "AMOUNT",
       donationAmount: "",
-      donation: "",
+      donation: "AMOUNT",
       description: "",
     },
     sponsorshipSchema
@@ -91,7 +91,6 @@ export default function SponsorEventScreen() {
     }
   };
 
-
   return (
     <KeyboardAvoidingView
       style={globalStyles.container}
@@ -127,17 +126,6 @@ export default function SponsorEventScreen() {
               {...getFieldProps("donationAmount")}
               error={touched.donationAmount ? errors.donationAmount : undefined}
               keyboardType="numeric"
-              required
-            />
-
-            <InputField
-              label="Donation Items/Services"
-              placeholder="e.g., Cleaning equipment and refreshments"
-              {...getFieldProps("donation")}
-              error={touched.donation ? errors.donation : undefined}
-              multiline
-              numberOfLines={3}
-              style={styles.textArea}
               required
             />
 

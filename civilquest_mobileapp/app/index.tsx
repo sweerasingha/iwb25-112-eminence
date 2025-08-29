@@ -96,7 +96,7 @@ export default function Index() {
 
           {/* App Title */}
           <Text style={styles.appTitle}>Civil Quest</Text>
-          <Text style={styles.appSubtitle}>Engineering Events Platform</Text>
+          <Text style={styles.appSubtitle}>New Era of Community Service</Text>
 
           {/* Loading Indicator */}
           <View style={styles.loadingContainer}>
@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
   appSubtitle: {
     fontSize: FONTS.sizes.lg,
     fontWeight: FONTS.weights.regular,
-    color: COLORS.white + 'CC',
+    color: COLORS.white ,
     textAlign: 'center',
     marginBottom: SPACING.enormous,
   },
