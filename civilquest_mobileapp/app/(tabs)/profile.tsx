@@ -159,8 +159,10 @@ export default function ProfileScreen() {
 
   const renderHeader = () => (
     <LinearGradient
-      colors={[COLORS.gradientStart, COLORS.gradientEnd]}
+      colors={[COLORS.primary, COLORS.secondary]}
       style={styles.headerGradient}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
     >
       <View style={styles.headerContent}>
         <View style={styles.avatarContainer}>
