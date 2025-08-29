@@ -77,7 +77,7 @@ service /api on httpListener {
     // Premium approval - Admin approves premium membership request
     isolated resource function put users/[string userId]/premium/approve(http:Caller caller, http:Request req) returns error? {
         check middleware:tokenValidation(caller, req);
-        check middleware:assertAnyRole(caller, req, ["ADMIN_OPERATOR"]);
+        check middleware:assertAnyRole(caller, req, ["ADMIN_OPERATOR", "ADMIN"]);
         check user:approvePremium(caller, req, userId, true);
     }
 
