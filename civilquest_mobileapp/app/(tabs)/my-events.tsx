@@ -14,7 +14,7 @@ import { useRouter } from "expo-router";
 
 import { useEvents } from "../../hooks/useEvents";
 import { useAuth } from "../../hooks";
-import { AppliedEventCard, Loading, Header } from "../../components";
+import { AppliedEventCard, Loading } from "../../components";
 import { globalStyles, COLORS, SPACING, LAYOUT } from "../../theme";
 import { AppliedEvent } from "../../types";
 

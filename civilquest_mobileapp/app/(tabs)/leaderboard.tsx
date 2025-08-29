@@ -98,8 +98,10 @@ export default function LeaderboardScreen() {
   const renderHeader = () => (
     <View style={styles.headerContainer}>
       <LinearGradient
-        colors={[COLORS.gradientStart, COLORS.gradientEnd]}
+        colors={[COLORS.primary, COLORS.secondary]}
         style={styles.heroSection}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
       >
         <View style={styles.heroContent}>
           <Ionicons name="trophy" size={32} color={COLORS.white} />
@@ -200,6 +202,7 @@ export default function LeaderboardScreen() {
 const styles = StyleSheet.create({
   headerContainer: {
     marginBottom: SPACING.lg,
+    borderBottomColor: COLORS.borderLight,
   },
   heroSection: {
     padding: SPACING.xl,
@@ -250,7 +253,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
   },
   listContainer: {
-    paddingBottom: SPACING.enormous, 
+    paddingBottom: SPACING.enormous,
   },
   cardContainer: {
     paddingHorizontal: SPACING.lg,

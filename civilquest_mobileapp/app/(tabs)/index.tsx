@@ -1,10 +1,17 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { View, Text, StyleSheet, RefreshControl, Animated } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  RefreshControl,
+  Animated,
+  Image,
+} from "react-native";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 
-import { EventCard, SearchAndFilter, Header, Loading } from "../../components";
+import { EventCard, SearchAndFilter, Loading, Header } from "../../components";
 import { useEvents } from "../../hooks";
 import { globalStyles, COLORS, SPACING, LAYOUT } from "../../theme";
 import { Event } from "../../types";
@@ -94,7 +101,59 @@ export default function HomeScreen() {
     </View>
   );
 
+  const renderHeader = () => {
+    const totalEvents = filteredEvents.length;
 
+    return (
+      <View style={styles.headerContainer}>
+        {/* Hero Section */}
+        <LinearGradient
+          colors={[COLORS.primary, COLORS.secondary]}
+          style={styles.heroSection}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <View style={styles.heroContent}>
+            <View style={styles.iconContainer}>
+              <Image
+                source={require("../../assets/icon.png")}
+                style={styles.appIcon}
+                resizeMode="contain"
+              />
+            </View>
+            <View style={styles.heroText}>
+              <Text style={[globalStyles.h2, styles.heroTitle]}>
+                CivilQuest
+              </Text>
+              <Text style={[styles.heroSubtitle]}>
+                New Era of Community Service
+              </Text>
+            </View>
+          </View>
+
+          {/* Stats */}
+          <View style={styles.statsContainer}>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{totalEvents}</Text>
+              <Text style={styles.statLabel}>Available Events</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Ionicons
+                name="location-outline"
+                size={20}
+                color={COLORS.white}
+              />
+              <Text style={styles.statLabel}>Nationwide</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Ionicons name="people-outline" size={20} color={COLORS.white} />
+              <Text style={styles.statLabel}>Join Community</Text>
+            </View>
+          </View>
+        </LinearGradient>
+      </View>
+    );
+  };
 
   const headerOpacity = scrollY.interpolate({
     inputRange: [0, 100],
@@ -111,20 +170,9 @@ export default function HomeScreen() {
 
   return (
     <View style={globalStyles.container}>
-      {/* Animated Header */}
+      {/* Custom Header */}
       <Animated.View style={{ opacity: headerOpacity }}>
-        <LinearGradient
-          colors={[COLORS.gradientStart, COLORS.gradientEnd]}
-          style={styles.headerGradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <Header
-            title="Civil Quest"
-            subtitle="New Era of Community Service"
-            variant="transparent"
-          />
-        </LinearGradient>
+        {renderHeader()}
       </Animated.View>
 
       <Animated.ScrollView
@@ -191,6 +239,71 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  headerContainer: {
+    backgroundColor: COLORS.surface,
+  },
+  heroSection: {
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.xxl,
+    paddingBottom: SPACING.xl,
+  },
+  heroContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: SPACING.xl,
+  },
+  iconContainer: {
+    width: 60,
+    height: 60,
+    backgroundColor: COLORS.white,
+    borderRadius: LAYOUT.borderRadius.xl,
+    padding: SPACING.sm,
+    marginRight: SPACING.lg,
+    alignItems: "center",
+    justifyContent: "center",
+    ...LAYOUT.shadows.md,
+  },
+  appIcon: {
+    width: 40,
+    height: 40,
+  },
+  heroText: {
+    flex: 1,
+  },
+  heroTitle: {
+    color: COLORS.white,
+    marginBottom: SPACING.xs,
+    fontSize: 28,
+    fontWeight: "700",
+  },
+  heroSubtitle: {
+    color: COLORS.white,
+    fontSize: 14,
+    opacity: 0.9,
+  },
+  statsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingTop: SPACING.lg,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.white + "20",
+  },
+  statItem: {
+    alignItems: "center",
+    flex: 1,
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: COLORS.white,
+    marginBottom: SPACING.xs,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: COLORS.white,
+    opacity: 0.8,
+    textAlign: "center",
+  },
   headerGradient: {
     paddingBottom: SPACING.lg,
   },
@@ -200,34 +313,6 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.lg,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.borderLight,
-  },
-  statsContainer: {
-    flexDirection: "row",
-    paddingHorizontal: SPACING.xl,
-    paddingVertical: SPACING.lg,
-    backgroundColor: COLORS.surface,
-    gap: SPACING.md,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-    borderRadius: LAYOUT.borderRadius.lg,
-    padding: SPACING.lg,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
-    ...LAYOUT.shadows.xs,
-  },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: COLORS.primary,
-    marginBottom: SPACING.sm,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: COLORS.textTertiary,
-    textAlign: "center",
   },
   section: {
     marginTop: SPACING.xxl,

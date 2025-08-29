@@ -198,9 +198,9 @@ const styles = StyleSheet.create({
     ...LAYOUT.shadows.xs,
   },
   title: {
-    fontSize: FONTS.sizes.xl,
+    fontSize: FONTS.sizes.xxl,
     fontWeight: FONTS.weights.bold,
-    color: COLORS.textPrimary,
+    color: COLORS.white,
     lineHeight: FONTS.sizes.xl * FONTS.lineHeights.tight,
   },
   titleTextCentered: {

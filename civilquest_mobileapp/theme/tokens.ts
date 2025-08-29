@@ -40,13 +40,13 @@ export const FONTS = {
 
 // Colors - Enhanced with better professional palette
 export const COLORS = {
-  primary: "#1B365D",      // Deep navy blue - trust, professionalism
+  primary: "#1B365D",      
   primaryLight: "#2E4F6E",
   primaryDark: "#0F1C2E",
-  primaryAccent: "#3B82F6", // Bright blue for accents
+  primaryAccent: "#3B82F6", 
 
   // Secondary colors - Construction orange
-  secondary: "#F97316",     // Construction orange
+  secondary: "#F97316",     
   secondaryLight: "#FB923C",
   secondaryDark: "#EA580C",
 
