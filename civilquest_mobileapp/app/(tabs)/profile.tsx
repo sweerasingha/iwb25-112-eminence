@@ -89,7 +89,7 @@ export default function ProfileScreen() {
       if (response.success) {
         Alert.alert("Success", "Profile updated successfully");
         setEditModalVisible(false);
-        await loadProfile(); 
+        await loadProfile();
       } else {
         Alert.alert("Error", response.error || "Failed to update profile");
       }
@@ -202,13 +202,6 @@ export default function ProfileScreen() {
           <Text style={styles.statValue}>{profile?.verified ? "✓" : "✗"}</Text>
           <Text style={styles.statLabel}>Verified</Text>
         </View>
-        <View style={styles.statDivider} />
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>
-            {profile?.otpVerified ? "✓" : "✗"}
-          </Text>
-          <Text style={styles.statLabel}>OTP Verified</Text>
-        </View>
       </View>
     </LinearGradient>
   );
@@ -223,11 +216,7 @@ export default function ProfileScreen() {
           label="Username"
           value={profile?.username || "Not set"}
         />
-        <DetailRow
-          icon="call-outline"
-          label="Phone Number"
-          value={profile?.phoneNumber || "Not set"}
-        />
+  
         <DetailRow
           icon="location-outline"
           label="Address"
