@@ -40,7 +40,6 @@ export const FONTS = {
 
 // Colors - Enhanced with better professional palette
 export const COLORS = {
-  // Brand colors - Civil Engineering theme
   primary: "#1B365D",      // Deep navy blue - trust, professionalism
   primaryLight: "#2E4F6E",
   primaryDark: "#0F1C2E",

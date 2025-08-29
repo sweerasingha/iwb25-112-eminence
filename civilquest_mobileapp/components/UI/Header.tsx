@@ -209,7 +209,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: FONTS.sizes.sm,
     fontWeight: FONTS.weights.regular,
-    color: COLORS.textTertiary,
+    color: COLORS.white,
     marginTop: SPACING.xs,
     lineHeight: FONTS.sizes.sm * FONTS.lineHeights.normal,
   },

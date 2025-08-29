@@ -147,7 +147,7 @@ export default function HomeScreen() {
         >
           <Header
             title="Civil Quest"
-            subtitle="Discover Engineering Events"
+            subtitle="New Era of Community Service"
             variant="transparent"
           />
         </LinearGradient>
