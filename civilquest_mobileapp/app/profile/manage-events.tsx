@@ -44,7 +44,7 @@ export default function ManageMyEventsScreen() {
       selectedEventId={selectedEvent?.id}
     />
   );
-
+ 
   return (
     <PremiumAccessGuard isPremium={isPremium}>
       <View style={[globalStyles.container, { flex: 1 }]}>

@@ -5,11 +5,13 @@ import {
   StyleSheet,
   TouchableOpacity,
   Dimensions,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { COLORS, SPACING, LAYOUT } from "../../theme";
 import { Event } from "../../types";
+import { router } from "expo-router";
 
 const { width } = Dimensions.get("window");
 
@@ -58,6 +60,13 @@ export default function ManageEventCard({
     }
   };
 
+  const handleEventPress = (event: Event) => {
+    router.push({
+      pathname: "/events/details",
+      params: { event: JSON.stringify(event) },
+    });
+  };
+
   const formatDate = (dateString: string, timeString: string) => {
     const date = new Date(dateString);
     const today = new Date();
@@ -85,9 +94,11 @@ export default function ManageEventCard({
         {/* Event Image */}
         <View style={styles.eventImageContainer}>
           {event.image_url ? (
-            <View style={styles.eventImage}>
-              <Ionicons name="image" size={40} color={COLORS.textTertiary} />
-            </View>
+            <Image
+              source={{ uri: event.image_url }}
+              style={styles.image}
+              resizeMode="cover"
+            />
           ) : (
             <View style={styles.eventImagePlaceholder}>
               <Ionicons name="camera" size={40} color={COLORS.textTertiary} />
@@ -114,7 +125,7 @@ export default function ManageEventCard({
 
         {/* Event Content */}
         <TouchableOpacity
-          onPress={() => onEventAction(event, "view_details")}
+          onPress={() => handleEventPress(event)}
           activeOpacity={0.95}
           style={styles.eventContent}
         >
@@ -176,18 +187,6 @@ export default function ManageEventCard({
         {/* Action Buttons */}
         <View style={styles.eventActions}>
           <View style={styles.actionRow}>
-            <TouchableOpacity
-              style={[styles.actionButton, styles.participateAction]}
-              onPress={() => onEventAction(event, "participate")}
-              activeOpacity={0.8}
-              disabled={participationActions[event.id]}
-            >
-              <Ionicons name="person-add" size={16} color={COLORS.white} />
-              <Text style={styles.actionButtonText}>
-                {participationActions[event.id] ? "Joining..." : "Participate"}
-              </Text>
-            </TouchableOpacity>
-
             <TouchableOpacity
               style={[styles.actionButton, styles.sponsorAction]}
               onPress={() => onEventAction(event, "view_sponsors")}
@@ -361,6 +360,7 @@ const styles = StyleSheet.create({
     gap: SPACING.sm,
   },
   actionRow: {
+    display: "flex",
     flexDirection: "row",
     gap: SPACING.sm,
   },
@@ -409,5 +409,9 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: COLORS.error,
     marginLeft: SPACING.xs,
+  },
+  image: {
+    width: "100%",
+    height: 135,
   },
 });
