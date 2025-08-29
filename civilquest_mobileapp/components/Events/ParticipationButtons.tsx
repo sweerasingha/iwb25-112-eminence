@@ -6,6 +6,7 @@ import { SPACING } from "../../theme";
 import { Event, ID } from "../../types";
 import { eventService } from "../../services/event";
 import { useAuth } from "../../hooks/useAuth";
+import { useEvents } from "hooks";
 
 type ApplyMethod = "WILL_JOIN" | "INTERESTED";
 
@@ -17,6 +18,7 @@ interface Props {
 export function ParticipationButtons({ event, initialMethod = null }: Props) {
   const router = useRouter();
   const { isAuthenticated, userEmail } = useAuth();
+  const { loadEvents } = useEvents();
 
   const [current, setCurrent] = useState<ApplyMethod | null>(initialMethod);
   const [loading, setLoading] = useState<ApplyMethod | null>(null);
@@ -40,8 +42,6 @@ export function ParticipationButtons({ event, initialMethod = null }: Props) {
   };
 
   const apply = async (method: ApplyMethod) => {
-   
-
     if (!ensureAuth()) return;
     try {
       setLoading(method);
@@ -52,6 +52,7 @@ export function ParticipationButtons({ event, initialMethod = null }: Props) {
       };
       const res = await eventService.applyToEvent(event.id, payload);
       if (res.success) {
+        await loadEvents();
         setCurrent(method);
       } else {
         Alert.alert("Failed", res.error || "Could not update participation");

@@ -1,12 +1,12 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, Image, ScrollView } from "react-native";
+import { View, Text, StyleSheet, Image, ScrollView, Alert } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { ParticipationButtons, Button, Loading } from "../../components";
 import { globalStyles, COLORS, SPACING, LAYOUT, FONTS } from "../../theme";
 import { Event, Sponsorship } from "types";
-import { useManageEvents } from "hooks/useManageEvents";
+import { eventService } from "../../services/event";
 import { useLocation } from "hooks/useLocation";
 
 export default function EventDetailsScreen() {
@@ -16,7 +16,6 @@ export default function EventDetailsScreen() {
     : params.event;
   const event = eventParam ? JSON.parse(eventParam as string) : null;
   const router = useRouter();
-  const { handleParticipateInEvent } = useManageEvents();
   const { location, getCurrentLocation, errorMsg, isLoading } = useLocation();
   const [processing, setProcessing] = useState(false);
 
@@ -42,16 +41,26 @@ export default function EventDetailsScreen() {
 
   const participateEvent = async () => {
     setProcessing(true);
-    await getCurrentLocation();
-    if (errorMsg == null) {
-      console.log("location", location);
-      handleParticipateInEvent({
-        eventId: event.id,
-        latitude: location?.coords.latitude || 0,
-        longitude: location?.coords.longitude || 0,
-      });
+    try {
+      await getCurrentLocation();
+      if (errorMsg == null) {
+        console.log("location", location);
+        const response = await eventService.participateInEvent({
+          eventId: event.id,
+          latitude: location?.coords.latitude || 0,
+          longitude: location?.coords.longitude || 0,
+        });
+
+        if (response.success) {
+          Alert.alert("Success", "Successfully participated in event");
+        } else {
+        }
+      } else {
+      }
+    } catch (error) {
+    } finally {
+      setProcessing(false);
     }
-    setProcessing(false);
   };
 
   const statusConfig = getStatusConfig(event.status);
@@ -249,26 +258,31 @@ export default function EventDetailsScreen() {
             </View>
           ))}
 
-          {/* show sponsors  */}
-          <View style={[globalStyles.card, styles.section]}>
-            <Text style={[globalStyles.h5, styles.sectionTitle]}>
-              Sponsors
-            </Text>
-            {event.sponsor?.length > 0 ? (
-              event.sponsor.map((sponsor:Sponsorship) => (
-                <Text key={sponsor.id} style={globalStyles.bodySmall}>
-                  {sponsor.description}
-                </Text>
-              ))
-            ) : (
-              <Text style={globalStyles.bodySmall}>
-                No sponsors for this event
+        {/* show sponsors  */}
+        <View style={[globalStyles.card, styles.section]}>
+          <Text style={[globalStyles.h5, styles.sectionTitle]}>Sponsors</Text>
+          {event.sponsor?.length > 0 ? (
+            event.sponsor.map((sponsor: Sponsorship) => (
+              <Text key={sponsor.id} style={globalStyles.bodySmall}>
+                {sponsor.description}
               </Text>
-            )}
-          </View>
+            ))
+          ) : (
+            <Text style={globalStyles.bodySmall}>
+              No sponsors for this event
+            </Text>
+          )}
+        </View>
 
         {/* Footer info */}
-        <View style={[globalStyles.card, styles.section, styles.footerInfo,{marginBottom: SPACING.md}]}>
+        <View
+          style={[
+            globalStyles.card,
+            styles.section,
+            styles.footerInfo,
+            { marginBottom: SPACING.md },
+          ]}
+        >
           <Text style={globalStyles.caption}>Created by</Text>
           <Text style={globalStyles.bodySmall}>{event.createdBy}</Text>
           <Text style={[globalStyles.caption, { marginTop: SPACING.sm }]}>

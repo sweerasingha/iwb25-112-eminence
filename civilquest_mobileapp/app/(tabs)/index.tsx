@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { View, Text, StyleSheet, RefreshControl, Animated } from "react-native";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -8,6 +8,7 @@ import { EventCard, SearchAndFilter, Header, Loading } from "../../components";
 import { useEvents } from "../../hooks";
 import { globalStyles, COLORS, SPACING, LAYOUT } from "../../theme";
 import { Event } from "../../types";
+import { useFocusEffect } from "@react-navigation/native";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -26,9 +27,11 @@ export default function HomeScreen() {
   const [scrollY] = useState(new Animated.Value(0));
   const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    loadEvents();
-  }, [loadEvents]);
+  useFocusEffect(
+    useCallback(() => {
+      loadEvents();
+    }, [])
+  );
 
   const handleEventPress = (event: Event) => {
     router.push({
