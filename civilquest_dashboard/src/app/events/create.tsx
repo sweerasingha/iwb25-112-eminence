@@ -4,15 +4,14 @@ import React, { useEffect, useMemo, useState } from "react";
 import z from "zod";
 import LoadingButton from "../../components/ui/button/index";
 
-import { ApiResponse } from "@/types";
+import { ApiResponse, EventLocation } from "@/types";
 import { useForm } from "@/hooks/useForm";
 import { InputField } from "@/components/ui/input";
 import { ComboBox } from "@/components/ui/comboBox";
 import { getProvinces, ProvinceCityMap } from "@/services/provinces";
 
-import {
-  createApiCompliantFormData,
-} from "@/utils/api-validation";
+import { createApiCompliantFormData } from "@/utils/api-validation";
+import GetSelectedLocation from "@/components/ui/getSelectedLocation";
 
 interface CreateProps {
   useEventHook: any;
@@ -25,27 +24,16 @@ const editEvent = z.object({
   location: z.string().min(1, "Location is required"),
   city: z.string().min(1, "City is required"),
   province: z.string().min(1, "Province is required"),
-  latitude: z
-    .string()
-    .min(1, "Latitude is required")
-    .refine((v) => {
-      const n = parseFloat(v);
-      return !Number.isNaN(n) && n >= -90 && n <= 90;
-    }, { message: "Latitude must be between -90 and 90" }),
-  longitude: z
-    .string()
-    .min(1, "Longitude is required")
-    .refine((v) => {
-      const n = parseFloat(v);
-      return !Number.isNaN(n) && n >= -180 && n <= 180;
-    }, { message: "Longitude must be between -180 and 180" }),
+  latitude: z.number().min(1, "Latitude is required"),
+
+  longitude: z.number().min(1, "Longitude is required"),
   eventTitle: z.string().min(1, "Event title is required"),
   eventDescription: z
     .string()
     .min(20, "Event description is required 20 characters minimum"),
   eventType: z.string().min(1, "Event type is required"),
   reward: z.string().min(1, "Reward is required"),
-  image: z.any().optional(), 
+  image: z.any().optional(),
 });
 
 const EVENT_TYPES = [
@@ -62,6 +50,8 @@ const EVENT_TYPES = [
 const Create = ({ useEventHook, handleClose }: CreateProps) => {
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
   const [provinceMap, setProvinceMap] = useState<ProvinceCityMap>({});
+  const [getSelectedLocation, setGetSelectedLocation] =
+    useState<EventLocation | null>(null);
 
   const { formData, handleChange, errors, validate, setFormData } = useForm(
     {
@@ -71,8 +61,8 @@ const Create = ({ useEventHook, handleClose }: CreateProps) => {
       location: "",
       city: "",
       province: "",
-      latitude: "",
-      longitude: "",
+      latitude: 0,
+      longitude: 0,
       eventTitle: "",
       eventDescription: "",
       eventType: "Environmental",
@@ -99,6 +89,12 @@ const Create = ({ useEventHook, handleClose }: CreateProps) => {
 
   const handleSubmit = async () => {
     let result: ApiResponse;
+    setFormData((prev: any) => ({
+      ...prev,
+      location: getSelectedLocation?.displayName || "",
+      latitude: getSelectedLocation?.latitude || "",
+      longitude: getSelectedLocation?.longitude || "",
+    }));
 
     if (validate()) {
       try {
@@ -116,6 +112,8 @@ const Create = ({ useEventHook, handleClose }: CreateProps) => {
     } else {
       console.log("Form validation failed:", errors);
     }
+
+    console.log("Submission result:", errors);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -127,6 +125,20 @@ const Create = ({ useEventHook, handleClose }: CreateProps) => {
 
   return (
     <div className="flex flex-col space-y-4">
+      <InputField
+        name={"eventTitle"}
+        label={"Event Title"}
+        value={formData.eventTitle}
+        onChange={handleChange}
+        error={errors.eventTitle}
+      />
+      <InputField
+        name={"eventDescription"}
+        label={"Event Description"}
+        value={formData.eventDescription}
+        onChange={handleChange}
+        error={errors.eventDescription}
+      />
       <InputField
         name={"date"}
         label={"Event Date"}
@@ -154,12 +166,11 @@ const Create = ({ useEventHook, handleClose }: CreateProps) => {
         type="time"
       />
 
-      <InputField
-        name={"location"}
-        label={"Location"}
-        value={formData.location}
-        onChange={handleChange}
-        error={errors.location}
+      <GetSelectedLocation
+        validationError={errors.location}
+        setLocation={function (location: EventLocation): void {
+          setGetSelectedLocation(location);
+        }}
       />
 
       <ComboBox
@@ -167,7 +178,6 @@ const Create = ({ useEventHook, handleClose }: CreateProps) => {
         label={"Province"}
         value={formData.province}
         onChange={(e) => {
-          // reset city when province changes
           handleChange(e as any);
           setFormData((prev: any) => ({ ...prev, city: "" }));
         }}
@@ -183,29 +193,6 @@ const Create = ({ useEventHook, handleClose }: CreateProps) => {
         error={errors.city as string}
       />
 
-      <InputField
-        name={"eventTitle"}
-        label={"Event Title"}
-        value={formData.eventTitle}
-        onChange={handleChange}
-        error={errors.eventTitle}
-      />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <InputField
-          name={"latitude"}
-          label={"Latitude"}
-          value={formData.latitude}
-          onChange={handleChange}
-          error={errors.latitude}
-        />
-        <InputField
-          name={"longitude"}
-          label={"Longitude"}
-          value={formData.longitude}
-          onChange={handleChange}
-          error={errors.longitude}
-        />
-      </div>
       <ComboBox
         name={"eventType"}
         label={"Event Type"}
@@ -214,13 +201,7 @@ const Create = ({ useEventHook, handleClose }: CreateProps) => {
         options={EVENT_TYPES.map((t) => ({ name: t, value: t }))}
         error={errors.eventType as string}
       />
-      <InputField
-        name={"eventDescription"}
-        label={"Event Description"}
-        value={formData.eventDescription}
-        onChange={handleChange}
-        error={errors.eventDescription}
-      />
+
       <InputField
         name={"reward"}
         label={"Reward"}
@@ -251,7 +232,7 @@ const Create = ({ useEventHook, handleClose }: CreateProps) => {
         )}
       </div>
 
-      <div className="flex space-x-4">
+      <div className="flex flex-col space-x-4">
         <LoadingButton
           onClick={async () => {
             await handleSubmit();

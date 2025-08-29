@@ -18,7 +18,10 @@ export default function ManageSponsors() {
   const [selectedSponsor, setSelectedSponsor] = useState<Sponsor | null>(null);
   const { user } = useUserContext();
   const role = user?.role;
-  const canModerate = role === Roles.ADMIN_OPERATOR || role === Roles.PREMIUM_USER || role === Roles.ADMIN;
+  const canModerate =
+    role === Roles.ADMIN_OPERATOR ||
+    role === Roles.PREMIUM_USER ||
+    role === Roles.ADMIN;
 
   useEffect(() => {
     useSponsorHook.fetchSponsors();
@@ -52,25 +55,41 @@ export default function ManageSponsors() {
     {
       accessorKey: "approvedStatus",
       header: "Approved Status",
-      cell: (info) => info.getValue() || "N/A",
+      cell: ({ row }) => {
+        const s = row.original.approvedStatus;
+        const styles: Record<string, string> = {
+          PENDING: "bg-yellow-50 text-yellow-800 ring-yellow-600/20",
+          APPROVED: "bg-green-50 text-green-700 ring-green-600/20",
+          REJECTED: "bg-red-50 text-red-700 ring-red-600/20",
+          ENDED: "bg-gray-100 text-gray-700 ring-gray-500/20",
+        };
+        const cls = styles[s] || "bg-gray-50 text-gray-700 ring-gray-500/20";
+        return (
+          <span
+            className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ring-inset ${cls}`}
+          >
+            {s}
+          </span>
+        );
+      },
       size: 150,
     },
     {
       accessorKey: "description",
       header: "Description",
-      cell: (info) =>( (info.getValue() as string).slice(0,50) +'....')|| "N/A",
+      cell: (info) =>
+        (info.getValue() as string).slice(0, 50) + "...." || "N/A",
       size: 150,
-      
     },
 
-  {
+    {
       id: "actions",
       header: "Actions",
       cell: ({ row }) => {
         const sponsor = row.original;
         return (
           <div className="flex gap-2">
-              {canModerate && sponsor.approvedStatus === "APPROVED" && (
+            {canModerate && sponsor.approvedStatus === "PENDING" && (
               <>
                 <StaticButton
                   onClick={() => {
@@ -119,11 +138,10 @@ export default function ManageSponsors() {
 
   return (
     <div className="container mx-auto py-8 px-4">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Sponsors</h1>
-        <p className="text-gray-600 mt-2">
-          Manage and review sponsor registrations
-        </p>
+        <div className="text-center mb-12 mt-8">
+        <h1 className="text-4xl md:text-5xl font-serif font-bold text-gray-800 mb-4">
+          Sponsor Management
+        </h1>
       </div>
 
       <div className="m-12 p-6 bg-white rounded-lg shadow-md border border-gray-200">

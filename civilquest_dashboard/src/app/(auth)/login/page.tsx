@@ -5,9 +5,10 @@ import useAuth from "@/hooks/useAuth";
 import { useForm } from "@/hooks/useForm";
 import { ApiResponse } from "@/types";
 import { useRouter } from "next/navigation";
-import React from "react";
+import React, { useState } from "react";
 import { toast } from "react-toastify";
 import z from "zod";
+import { Eye, EyeOff } from "lucide-react"; // 👈 import icons
 
 const LoginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -27,6 +28,8 @@ const LoginPage = () => {
     { email: "", password: "" },
     LoginSchema
   );
+
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async () => {
     if (validate()) {
@@ -64,14 +67,24 @@ const LoginPage = () => {
               error={errors.email}
             />
 
-            <InputField
-              name="password"
-              label="Password"
-              type="password"
-              value={formData.password}
-              onChange={handleChange}
-              error={errors.password}
-            />
+            {/* Password field with toggle */}
+            <div className="relative">
+              <InputField
+                name="password"
+                label="Password"
+                type={showPassword ? "text" : "password"}
+                value={formData.password}
+                onChange={handleChange}
+                error={errors.password}
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-9 text-gray-500 hover:text-gray-700"
+                onClick={() => setShowPassword((prev) => !prev)}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
 
             <LoadingButton
               onClick={handleLogin}
