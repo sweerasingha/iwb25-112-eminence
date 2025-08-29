@@ -19,6 +19,8 @@ import { useAuth } from "../../hooks";
 import { globalStyles, COLORS, SPACING, LAYOUT } from "../../theme";
 import { userService } from "../../services/user";
 import { User } from "../../types";
+import { ComboBox } from "components/UI/ComboBox";
+import { mainCities } from "utils/cities";
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -216,7 +218,7 @@ export default function ProfileScreen() {
           label="Username"
           value={profile?.username || "Not set"}
         />
-  
+
         <DetailRow
           icon="location-outline"
           label="Address"
@@ -350,41 +352,35 @@ export default function ProfileScreen() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Hometown</Text>
-            <TextInput
-              style={styles.input}
+            <ComboBox
+              label="Hometown"
               value={editForm.hometown}
-              onChangeText={(text) =>
-                setEditForm((prev) => ({ ...prev, hometown: text }))
+              options={mainCities}
+              onChange={(value) =>
+                setEditForm((prev) => ({ ...prev, hometown: value }))
               }
-              placeholder="Enter hometown"
-              placeholderTextColor={COLORS.textTertiary}
             />
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Living City</Text>
-            <TextInput
-              style={styles.input}
+            <ComboBox
+              label="Living City"
               value={editForm.livingCity}
-              onChangeText={(text) =>
-                setEditForm((prev) => ({ ...prev, livingCity: text }))
+              options={mainCities}
+              onChange={(value) =>
+                setEditForm((prev) => ({ ...prev, livingCity: value }))
               }
-              placeholder="Enter living city"
-              placeholderTextColor={COLORS.textTertiary}
             />
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Gender</Text>
-            <TextInput
-              style={styles.input}
+            <ComboBox
+              label="Gender"
               value={editForm.gender}
-              onChangeText={(text) =>
-                setEditForm((prev) => ({ ...prev, gender: text }))
+              options={["Male", "Female", "Other"]}
+              onChange={(value) =>
+                setEditForm((prev) => ({ ...prev, gender: value }))
               }
-              placeholder="Enter gender (e.g., Male, Female, Other)"
-              placeholderTextColor={COLORS.textTertiary}
             />
           </View>
 
