@@ -353,7 +353,7 @@ public isolated function requestPremium(http:Caller caller, http:Request req) re
     }
     mongodb:UpdateResult|error ur = userCollection->updateOne(
         {"email": userId},
-        {"$set": {"role": "PREMIUM_PENDING", "updatedAt": time:utcToString(time:utcNow())}}
+        {"set": {"role": "PREMIUM_PENDING", "updatedAt": time:utcToString(time:utcNow())}}
     );
     if ur is error {
         return utils:serverError(caller);
@@ -533,7 +533,7 @@ public isolated function updateAdmin(http:Caller caller, http:Request req, strin
 
     map<json> filter = byUserId(adminId);
     filter["role"] = "ADMIN";
-    mongodb:UpdateResult|error ur = userCollection->updateOne(filter, {"$set": updateData});
+    mongodb:UpdateResult|error ur = userCollection->updateOne(filter, {"set": updateData});
     if ur is error {
         return utils:serverError(caller);
     }
@@ -725,7 +725,7 @@ public isolated function updateAdminOperator(http:Caller caller, http:Request re
 
     updateData["updatedAt"] = time:utcToString(time:utcNow());
 
-    mongodb:UpdateResult|error ur = userCollection->updateOne(checkFilter, {"$set": updateData});
+    mongodb:UpdateResult|error ur = userCollection->updateOne(checkFilter, {"set": updateData});
     if ur is error {
         return utils:serverError(caller);
     }
@@ -880,7 +880,16 @@ public function updateUserProfile(http:Caller caller, http:Request req) returns 
         return utils:badRequest(caller, "Invalid payload");
     }
 
+    if !(body is map<json>) {
+        return utils:badRequest(caller, "Payload must be a JSON object");
+    }
+
     map<json> m = <map<json>>body;
+    string[] payloadKeys = [];
+    foreach var [k, _] in m.entries() {
+        payloadKeys.push(k);
+    }
+
     map<json> updateData = {};
 
     // Build update data from provided fields
@@ -914,8 +923,17 @@ public function updateUserProfile(http:Caller caller, http:Request req) returns 
 
     updateData["updatedAt"] = time:utcToString(time:utcNow());
 
+    if updateData.length() == 1 {
+        return utils:badRequest(caller, "No updatable fields provided");
+    }
+
+    string[] updateKeys = [];
+    foreach var [k, _] in updateData.entries() {
+        updateKeys.push(k);
+    }
+
     // Update user by email (since tokens use email as userId)
-    mongodb:UpdateResult|error ur = userCollection->updateOne({"email": userId}, {"$set": updateData});
+    mongodb:UpdateResult|error ur = userCollection->updateOne({"email": userId}, {"set": updateData});
     if ur is error {
         return utils:serverError(caller);
     }
