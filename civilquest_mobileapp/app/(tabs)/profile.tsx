@@ -14,8 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 
-import { Button } from "../../components/UI/Button";
-import { Loading } from "../../components/UI/Loading";
+import { Button, Loading } from "../../components";
 import { useAuth } from "../../hooks";
 import { globalStyles, COLORS, SPACING, LAYOUT } from "../../theme";
 import { userService } from "../../services/user";
@@ -90,7 +89,7 @@ export default function ProfileScreen() {
       if (response.success) {
         Alert.alert("Success", "Profile updated successfully");
         setEditModalVisible(false);
-        await loadProfile(); // Refresh the profile
+        await loadProfile(); 
       } else {
         Alert.alert("Error", response.error || "Failed to update profile");
       }

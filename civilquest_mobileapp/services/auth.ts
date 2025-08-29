@@ -29,10 +29,7 @@ class AuthService {
       console.log("Login response:", result);
 
       if (!result.success) {
-        return {
-          success: false,
-          error: result.error || "Login failed - server error",
-        };
+        return result;
       }
 
       const payload: any = result.data || {};
@@ -42,7 +39,7 @@ class AuthService {
         payload.data?.token ||
         payload.data?.accessToken;
       const message: string | undefined =
-        payload.message || payload.data?.message;
+        result.message || payload.message || payload.data?.message;
       console.log("Token received:", !!token);
 
       if (!token) {
@@ -77,6 +74,10 @@ class AuthService {
     try {
       const result = await api.post("/auth/register/init", credentials);
 
+      if (!result.success) {
+        return result;
+      }
+
       const payload: any = result.data || {};
       const token: string | undefined =
         payload.token ||
@@ -84,7 +85,7 @@ class AuthService {
         payload.data?.token ||
         payload.data?.accessToken;
       const message: string | undefined =
-        payload.message || payload.data?.message;
+        result.message || payload.message || payload.data?.message;
 
       if (!token) {
         return {

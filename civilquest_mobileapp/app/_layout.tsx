@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Stack } from "expo-router";
 import { Provider } from "react-redux";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -9,10 +9,10 @@ import Toast from "react-native-toast-message";
 import { store } from "../store";
 import { useAuth } from "../hooks";
 import { COLORS } from "../theme";
+import SplashScreen from "components/Splash/SplashScreen";
 
 // Toast configuration
-const toastConfig = {
-};
+const toastConfig = {};
 
 function AuthInitializer({ children }: { children: React.ReactNode }) {
   const { loadStoredAuth } = useAuth();
@@ -25,9 +25,23 @@ function AuthInitializer({ children }: { children: React.ReactNode }) {
 }
 
 export default function RootLayout() {
+  const [showSplash, setShowSplash] = useState(true);
+
+  useEffect(() => {
+    // Show splash for 3 seconds
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (showSplash) {
+    return <SplashScreen />;
+  }
   return (
     <Provider store={store}>
-      <SafeAreaProvider>
+      <SafeAreaProvider style={{ flex: 1 }}>
         <StatusBar style="auto" backgroundColor={COLORS.background} />
         <AuthInitializer>
           <Stack>

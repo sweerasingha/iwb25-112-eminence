@@ -1,12 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  FlatList,
-  StyleSheet,
-  RefreshControl,
-  Animated,
-} from "react-native";
+import { View, Text, StyleSheet, RefreshControl, Animated } from "react-native";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -74,14 +67,6 @@ export default function HomeScreen() {
     />
   );
 
-  const renderFeaturedEvent = ({ item }: { item: Event }) => (
-    <EventCard
-      event={item}
-      onPress={() => handleEventPress(item)}
-      variant="featured"
-    />
-  );
-
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
       <Ionicons name="calendar-outline" size={64} color={COLORS.textTertiary} />
@@ -137,32 +122,18 @@ export default function HomeScreen() {
     );
   };
 
-  const featuredEvents = filteredEvents
-    .filter((event) => event.status === "APPROVED")
-    .slice(0, 3);
-
-  if (isLoadingEvents && filteredEvents.length === 0) {
-    return (
-      <View style={globalStyles.container}>
-        <Header
-          title="Civil Quest"
-          subtitle="Discover Engineering Events"
-          variant="gradient"
-        />
-        <Loading
-          visible={true}
-          message="Loading amazing events for you..."
-          variant="skeleton"
-        />
-      </View>
-    );
-  }
-
   const headerOpacity = scrollY.interpolate({
     inputRange: [0, 100],
     outputRange: [1, 0.8],
     extrapolate: "clamp",
   });
+  if (isLoadingEvents && !refreshing && filteredEvents.length === 0) {
+    return (
+      <View style={globalStyles.centerContainer}>
+        <Loading visible={true} message="Loading events..." variant="overlay" />
+      </View>
+    );
+  }
 
   return (
     <View style={globalStyles.container}>
@@ -212,28 +183,6 @@ export default function HomeScreen() {
             onClearFilters={handleClearFilters}
           />
         </View>
-
-        {/* Featured Events Section */}
-        {featuredEvents.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={[globalStyles.h3, styles.sectionTitle]}>
-                Featured Events
-              </Text>
-              <Ionicons name="star" size={20} color={COLORS.warning} />
-            </View>
-            <FlatList
-              data={featuredEvents}
-              renderItem={renderFeaturedEvent}
-              keyExtractor={(item) => `featured-${item.id}`}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.featuredList}
-              snapToInterval={LAYOUT.window.width - SPACING.xl}
-              decelerationRate="fast"
-            />
-          </View>
-        )}
 
         {/* All Events Section */}
         <View style={styles.section}>

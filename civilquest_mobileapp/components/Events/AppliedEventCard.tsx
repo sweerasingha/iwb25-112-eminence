@@ -4,8 +4,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 
-import { AppliedEvent } from "../types";
-import { globalStyles, COLORS, SPACING, LAYOUT } from "../theme";
+import { AppliedEvent } from "../../types";
+import { globalStyles, COLORS, SPACING, LAYOUT } from "../../theme";
 
 export interface AppliedEventCardProps {
   appliedEvent: AppliedEvent;

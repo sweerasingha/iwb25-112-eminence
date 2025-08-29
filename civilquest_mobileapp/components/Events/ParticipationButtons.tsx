@@ -1,20 +1,20 @@
 import React, { useMemo, useState } from "react";
 import { Alert, View, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { Button } from "./UI/Button";
-import {  SPACING } from "../theme";
-import { ID } from "../types";
-import { eventService } from "../services/event";
-import { useAuth } from "../hooks/useAuth";
+import { Button } from "../UI/Button";
+import { SPACING } from "../../theme";
+import { Event, ID } from "../../types";
+import { eventService } from "../../services/event";
+import { useAuth } from "../../hooks/useAuth";
 
 type ApplyMethod = "WILL_JOIN" | "INTERESTED";
 
 interface Props {
-  eventId: ID;
+  event: Event;
   initialMethod?: ApplyMethod | null;
 }
 
-export default function ParticipationButtons({ eventId, initialMethod = null }: Props) {
+export function ParticipationButtons({ event, initialMethod = null }: Props) {
   const router = useRouter();
   const { isAuthenticated, userEmail } = useAuth();
 
@@ -25,14 +25,10 @@ export default function ParticipationButtons({ eventId, initialMethod = null }: 
 
   const ensureAuth = () => {
     if (!isAuthenticated) {
-      Alert.alert(
-        "Login required",
-        "Please login to apply for this event.",
-        [
-          { text: "Cancel", style: "cancel" },
-          { text: "Login", onPress: () => router.push("/auth/login") },
-        ]
-      );
+      Alert.alert("Login required", "Please login to apply for this event.", [
+        { text: "Cancel", style: "cancel" },
+        { text: "Login", onPress: () => router.push("/auth/login") },
+      ]);
       return false;
     }
     return true;
@@ -44,6 +40,8 @@ export default function ParticipationButtons({ eventId, initialMethod = null }: 
   };
 
   const apply = async (method: ApplyMethod) => {
+   
+
     if (!ensureAuth()) return;
     try {
       setLoading(method);
@@ -52,7 +50,7 @@ export default function ParticipationButtons({ eventId, initialMethod = null }: 
         name: deriveNameFromEmail(userEmail),
         method,
       };
-      const res = await eventService.applyToEvent(eventId, payload);
+      const res = await eventService.applyToEvent(event.id, payload);
       if (res.success) {
         setCurrent(method);
       } else {
@@ -99,3 +97,5 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 });
+
+export default ParticipationButtons;

@@ -7,24 +7,24 @@ import {
   StyleSheet,
   Dimensions,
 } from "react-native";
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import { Event } from "../types";
-import { globalStyles, COLORS, SPACING, LAYOUT } from "../theme";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
+import { Event } from "../../types";
+import { globalStyles, COLORS, SPACING, LAYOUT } from "../../theme";
 
 interface EventCardProps {
   event: Event;
   onPress: () => void;
-  variant?: 'default' | 'featured' | 'compact';
+  variant?: "default" | "featured" | "compact";
 }
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = width - SPACING.xl * 2;
 
-export const EventCard: React.FC<EventCardProps> = ({ 
-  event, 
-  onPress, 
-  variant = 'default' 
+export const EventCard: React.FC<EventCardProps> = ({
+  event,
+  onPress,
+  variant = "default",
 }) => {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -38,32 +38,32 @@ export const EventCard: React.FC<EventCardProps> = ({
   const getStatusConfig = (status: string) => {
     switch (status) {
       case "APPROVED":
-        return { 
-          color: COLORS.success, 
+        return {
+          color: COLORS.success,
           bg: COLORS.successBg,
-          icon: 'checkmark-circle',
-          text: 'Approved'
+          icon: "checkmark-circle",
+          text: "Approved",
         };
       case "PENDING":
-        return { 
-          color: COLORS.warning, 
+        return {
+          color: COLORS.warning,
           bg: COLORS.warningBg,
-          icon: 'time',
-          text: 'Pending'
+          icon: "time",
+          text: "Pending",
         };
       case "REJECTED":
-        return { 
-          color: COLORS.error, 
+        return {
+          color: COLORS.error,
           bg: COLORS.errorBg,
-          icon: 'close-circle',
-          text: 'Rejected'
+          icon: "close-circle",
+          text: "Rejected",
         };
       default:
-        return { 
-          color: COLORS.textTertiary, 
+        return {
+          color: COLORS.textTertiary,
           bg: COLORS.backgroundSecondary,
-          icon: 'help-circle',
-          text: status
+          icon: "help-circle",
+          text: status,
         };
     }
   };
@@ -78,16 +78,25 @@ export const EventCard: React.FC<EventCardProps> = ({
     >
       <View style={styles.compactContent}>
         <View style={styles.compactInfo}>
-          <Text style={[globalStyles.h5, styles.compactTitle]} numberOfLines={1}>
+          <Text
+            style={[globalStyles.h5, styles.compactTitle]}
+            numberOfLines={1}
+          >
             {event.eventTitle}
           </Text>
           <Text style={[globalStyles.bodySmall, styles.compactDate]}>
             {formatDate(event.date + "T" + event.startTime)}
           </Text>
         </View>
-        
-        <View style={[styles.statusBadge, { backgroundColor: statusConfig.bg }]}>
-          <Ionicons name={statusConfig.icon as any} size={12} color={statusConfig.color} />
+
+        <View
+          style={[styles.statusBadge, { backgroundColor: statusConfig.bg }]}
+        >
+          <Ionicons
+            name={statusConfig.icon as any}
+            size={12}
+            color={statusConfig.color}
+          />
         </View>
       </View>
     </TouchableOpacity>
@@ -107,12 +116,22 @@ export const EventCard: React.FC<EventCardProps> = ({
             resizeMode="cover"
           />
           <LinearGradient
-            colors={['transparent', 'rgba(0,0,0,0.7)']}
+            colors={["transparent", "rgba(0,0,0,0.7)"]}
             style={styles.imageOverlay}
           />
           <View style={styles.imageContent}>
-            <View style={[styles.statusBadge, styles.imageStatusBadge, { backgroundColor: statusConfig.bg }]}>
-              <Ionicons name={statusConfig.icon as any} size={14} color={statusConfig.color} />
+            <View
+              style={[
+                styles.statusBadge,
+                styles.imageStatusBadge,
+                { backgroundColor: statusConfig.bg },
+              ]}
+            >
+              <Ionicons
+                name={statusConfig.icon as any}
+                size={14}
+                color={statusConfig.color}
+              />
               <Text style={[styles.statusText, { color: statusConfig.color }]}>
                 {statusConfig.text}
               </Text>
@@ -126,7 +145,9 @@ export const EventCard: React.FC<EventCardProps> = ({
           <Text style={[globalStyles.h4, styles.title]} numberOfLines={2}>
             {event.eventTitle}
           </Text>
-          <Text style={[globalStyles.bodySmall, styles.type]}>{event.eventType}</Text>
+          <Text style={[globalStyles.bodySmall, styles.type]}>
+            {event.eventType}
+          </Text>
         </View>
 
         <Text style={[globalStyles.body, styles.description]} numberOfLines={2}>
@@ -136,11 +157,14 @@ export const EventCard: React.FC<EventCardProps> = ({
         <View style={styles.metaInfo}>
           <View style={styles.metaItem}>
             <Ionicons name="location" size={16} color={COLORS.textTertiary} />
-            <Text style={[globalStyles.caption, styles.metaText]} numberOfLines={1}>
+            <Text
+              style={[globalStyles.caption, styles.metaText]}
+              numberOfLines={1}
+            >
               {event.location}, {event.city}
             </Text>
           </View>
-          
+
           <View style={styles.metaItem}>
             <Ionicons name="time" size={16} color={COLORS.textTertiary} />
             <Text style={[globalStyles.caption, styles.metaText]}>
@@ -157,7 +181,7 @@ export const EventCard: React.FC<EventCardProps> = ({
                 {event.participantCount || event.participant.length}
               </Text>
             </View>
-            
+
             {event.sponsor.length > 0 && (
               <View style={styles.statItem}>
                 <Ionicons name="diamond" size={16} color={COLORS.secondary} />
@@ -178,21 +202,39 @@ export const EventCard: React.FC<EventCardProps> = ({
 
         {event.userApplicationStatus?.hasApplied && (
           <View style={styles.participationStatus}>
-            <View style={[
-              styles.participationBadge,
-              { backgroundColor: event.userApplicationStatus.method === "WILL_JOIN" ? COLORS.success : COLORS.info }
-            ]}>
-              <Ionicons 
-                name={event.userApplicationStatus.method === "WILL_JOIN" ? "checkmark" : "heart"} 
-                size={12} 
-                color={COLORS.white} 
+            <View
+              style={[
+                styles.participationBadge,
+                {
+                  backgroundColor:
+                    event.userApplicationStatus.method === "WILL_JOIN"
+                      ? COLORS.success
+                      : COLORS.info,
+                },
+              ]}
+            >
+              <Ionicons
+                name={
+                  event.userApplicationStatus.method === "WILL_JOIN"
+                    ? "checkmark"
+                    : "heart"
+                }
+                size={12}
+                color={COLORS.white}
               />
               <Text style={styles.participationText}>
-                {event.userApplicationStatus.method === "WILL_JOIN" ? "Joining" : "Interested"}
+                {event.userApplicationStatus.method === "WILL_JOIN"
+                  ? "Joining"
+                  : "Interested"}
               </Text>
             </View>
             {event.userApplicationStatus.isParticipated && (
-              <View style={[styles.participationBadge, { backgroundColor: COLORS.primary }]}>
+              <View
+                style={[
+                  styles.participationBadge,
+                  { backgroundColor: COLORS.primary },
+                ]}
+              >
                 <Ionicons name="trophy" size={12} color={COLORS.white} />
                 <Text style={styles.participationText}>Participated</Text>
               </View>
@@ -223,11 +265,19 @@ export const EventCard: React.FC<EventCardProps> = ({
             <Text style={[globalStyles.h4, styles.title]} numberOfLines={2}>
               {event.eventTitle}
             </Text>
-            <Text style={[globalStyles.bodySmall, styles.type]}>{event.eventType}</Text>
+            <Text style={[globalStyles.bodySmall, styles.type]}>
+              {event.eventType}
+            </Text>
           </View>
-          
-          <View style={[styles.statusBadge, { backgroundColor: statusConfig.bg }]}>
-            <Ionicons name={statusConfig.icon as any} size={12} color={statusConfig.color} />
+
+          <View
+            style={[styles.statusBadge, { backgroundColor: statusConfig.bg }]}
+          >
+            <Ionicons
+              name={statusConfig.icon as any}
+              size={12}
+              color={statusConfig.color}
+            />
             <Text style={[styles.statusText, { color: statusConfig.color }]}>
               {statusConfig.text}
             </Text>
@@ -241,11 +291,14 @@ export const EventCard: React.FC<EventCardProps> = ({
         <View style={styles.metaInfo}>
           <View style={styles.metaItem}>
             <Ionicons name="location" size={14} color={COLORS.textTertiary} />
-            <Text style={[globalStyles.caption, styles.metaText]} numberOfLines={1}>
+            <Text
+              style={[globalStyles.caption, styles.metaText]}
+              numberOfLines={1}
+            >
               {event.location}, {event.city}
             </Text>
           </View>
-          
+
           <View style={styles.metaItem}>
             <Ionicons name="time" size={14} color={COLORS.textTertiary} />
             <Text style={[globalStyles.caption, styles.metaText]}>
@@ -261,28 +314,42 @@ export const EventCard: React.FC<EventCardProps> = ({
             </Text>
             {event.sponsor.length > 0 && (
               <Text style={[globalStyles.caption, styles.statText]}>
-                 {event.sponsor.length}
+                {event.sponsor.length}
               </Text>
             )}
           </View>
-          
+
           <Text style={[globalStyles.caption, styles.rewardText]}>
-             {event.reward}
+            {event.reward}
           </Text>
         </View>
 
-        {event.userApplicationStatus?.hasApplied && (
+        {event.userApplicationStatus!.method !== undefined && (
           <View style={styles.participationStatus}>
-            <View style={[
-              styles.participationBadge,
-              { backgroundColor: event.userApplicationStatus.method === "WILL_JOIN" ? COLORS.success : COLORS.info }
-            ]}>
+            <View
+              style={[
+                styles.participationBadge,
+                {
+                  backgroundColor:
+                    event.userApplicationStatus?.method === "WILL_JOIN"
+                      ? COLORS.success
+                      : COLORS.info,
+                },
+              ]}
+            >
               <Text style={styles.participationText}>
-                {event.userApplicationStatus.method === "WILL_JOIN" ? " Joining" : " Interested"}
+                {event.userApplicationStatus?.method === "WILL_JOIN"
+                  ? " Joining"
+                  : " Interested"}
               </Text>
             </View>
-            {event.userApplicationStatus.isParticipated && (
-              <View style={[styles.participationBadge, { backgroundColor: COLORS.primary }]}>
+            {event.userApplicationStatus?.isParticipated && (
+              <View
+                style={[
+                  styles.participationBadge,
+                  { backgroundColor: COLORS.primary },
+                ]}
+              >
                 <Text style={styles.participationText}> Participated</Text>
               </View>
             )}
@@ -292,8 +359,8 @@ export const EventCard: React.FC<EventCardProps> = ({
     </TouchableOpacity>
   );
 
-  if (variant === 'compact') return renderCompactCard();
-  if (variant === 'featured') return renderFeaturedCard();
+  if (variant === "compact") return renderCompactCard();
+  if (variant === "featured") return renderFeaturedCard();
   return renderDefaultCard();
 };
 
@@ -307,27 +374,27 @@ const styles = StyleSheet.create({
     borderColor: COLORS.borderLight,
     ...LAYOUT.shadows.sm,
   },
-  
+
   // Default variant
   defaultContainer: {
     width: CARD_WIDTH,
   },
-  
+
   // Featured variant
   featuredContainer: {
     width: CARD_WIDTH + SPACING.lg,
     ...LAYOUT.shadows.md,
   },
-  
+
   // Compact variant
   compactContainer: {
     width: CARD_WIDTH,
     padding: SPACING.lg,
   },
   compactContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   compactInfo: {
     flex: 1,
@@ -341,7 +408,7 @@ const styles = StyleSheet.create({
 
   // Image styles
   imageContainer: {
-    position: 'relative',
+    position: "relative",
     height: 200,
   },
   image: {
@@ -353,14 +420,14 @@ const styles = StyleSheet.create({
     height: 200,
   },
   imageOverlay: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
   },
   imageContent: {
-    position: 'absolute',
+    position: "absolute",
     top: SPACING.lg,
     right: SPACING.lg,
   },
@@ -375,7 +442,7 @@ const styles = StyleSheet.create({
   featuredContent: {
     padding: SPACING.xxl,
   },
-  
+
   header: {
     marginBottom: SPACING.lg,
   },
@@ -391,14 +458,14 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     fontWeight: "600",
   },
-  
+
   statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm,
     borderRadius: LAYOUT.borderRadius.full,
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
   },
   statusText: {
     fontSize: 12,
@@ -418,8 +485,8 @@ const styles = StyleSheet.create({
     gap: SPACING.md,
   },
   metaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: SPACING.md,
   },
   metaText: {
@@ -435,7 +502,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: COLORS.borderLight,
   },
-  
+
   stats: {
     flexDirection: "row",
     alignItems: "center",
@@ -450,7 +517,7 @@ const styles = StyleSheet.create({
     color: COLORS.textTertiary,
     fontWeight: "500",
   },
-  
+
   reward: {
     flexDirection: "row",
     alignItems: "center",
@@ -467,8 +534,8 @@ const styles = StyleSheet.create({
     gap: SPACING.md,
   },
   participationBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.md,
     borderRadius: LAYOUT.borderRadius.lg,

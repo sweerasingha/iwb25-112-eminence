@@ -214,6 +214,14 @@ export interface CreateEventRequest {
   location: string;
   city: string;
   reward: string;
+  longitude: number;
+  latitude: number;
+}
+
+export interface EventLocation {
+  displayName: string;
+  longitude: number;
+  latitude: number;
 }
 
 export type LoadingState = "idle" | "loading" | "succeeded" | "failed";

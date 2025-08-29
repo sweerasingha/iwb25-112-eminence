@@ -9,8 +9,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 
-import { LeaderboardEntry } from "../types";
-import { globalStyles, COLORS, SPACING, LAYOUT, FONTS } from "../theme";
+import { LeaderboardEntry } from "../../types";
+import { globalStyles, COLORS, SPACING, LAYOUT, FONTS } from "../../theme";
 
 export interface LeaderboardCardProps {
   entry: LeaderboardEntry;
@@ -146,7 +146,7 @@ export const LeaderboardCard: React.FC<LeaderboardCardProps> = ({
             <View style={styles.rankItem}>
               <Text style={[globalStyles.caption, styles.rankLabel]}>City</Text>
               <Text style={[globalStyles.bodySmall, styles.rankValue]}>
-                #{cityRank}
+                #{cityRank}-{livingCity}
               </Text>
             </View>
           )}

@@ -7,25 +7,15 @@ class SponsorshipService {
   async createSponsorship(
     sponsorshipData: SponsorshipRequest
   ): Promise<ApiResponse<Sponsorship>> {
-    try {
-      const response = await api.post<Sponsorship>(
-        "/sponsors",
-        sponsorshipData
-      );
-      console.log("Create sponsorship response:", response);
-      console.log("Create sponsorship response.data:", response.data);
-      return {
-        success: true,
-        data: response.data,
-        message: "Sponsorship created successfully",
-      };
-    } catch (error: any) {
-      console.error("Create sponsorship error:", error);
-      return {
-        success: false,
-        error: error.response?.data?.message || "Failed to create sponsorship",
-      };
-    }
+    const response = await api.post<Sponsorship>("/sponsors", {
+      userId: sponsorshipData.userId,
+      eventId: sponsorshipData.eventId,
+      sponsorType: sponsorshipData.sponsorType,
+      amount: sponsorshipData.donationAmount,
+      donation: sponsorshipData.donation,
+      description: sponsorshipData.description,
+    });
+    return response;
   }
 
   // Get sponsorships for an event
@@ -33,50 +23,17 @@ class SponsorshipService {
   async getEventSponsorships(
     eventId: string
   ): Promise<ApiResponse<Sponsorship[]>> {
-    try {
-      const response = await api.get<ApiResponse<Sponsorship[]>>(
-        `/sponsorships/event/${eventId}`
-      );
-      return (
-        response.data || {
-          success: false,
-          message: "No data received",
-          data: [],
-        }
-      );
-    } catch (error: any) {
-      console.error("Get event sponsorships error:", error);
-      return {
-        success: false,
-        error: error.response?.data?.message || "Failed to get sponsorships",
-        data: [],
-      };
-    }
+    const response = await api.get<Sponsorship[]>(
+      `/sponsorships/event/${eventId}`
+    );
+    return response;
   }
 
   // Get user's sponsorships
 
   async getUserSponsorships(): Promise<ApiResponse<Sponsorship[]>> {
-    try {
-      const response = await api.get<ApiResponse<Sponsorship[]>>(
-        "/sponsorships/my"
-      );
-      return (
-        response.data || {
-          success: false,
-          message: "No data received",
-          data: [],
-        }
-      );
-    } catch (error: any) {
-      console.error("Get user sponsorships error:", error);
-      return {
-        success: false,
-        error:
-          error.response?.data?.message || "Failed to get user sponsorships",
-        data: [],
-      };
-    }
+    const response = await api.get<Sponsorship[]>("/sponsorships/my");
+    return response;
   }
 
   // Update sponsorship status
@@ -84,62 +41,25 @@ class SponsorshipService {
     sponsorshipId: string,
     status: string
   ): Promise<ApiResponse<Sponsorship>> {
-    try {
-      const response = await api.patch<ApiResponse<Sponsorship>>(
-        `/sponsorships/${sponsorshipId}/status`,
-        { status }
-      );
-      return (
-        response.data || {
-          success: false,
-          message: "No data received",
-        }
-      );
-    } catch (error: any) {
-      console.error("Update sponsorship status error:", error);
-      return {
-        success: false,
-        error:
-          error.response?.data?.message ||
-          "Failed to update sponsorship status",
-      };
-    }
+    const response = await api.patch<Sponsorship>(
+      `/sponsorships/${sponsorshipId}/status`,
+      { status }
+    );
+    return response;
   }
 
   // Approve sponsorship
 
   async approveSponsor(sponsorId: ID): Promise<ApiResponse<null>> {
-    try {
-      const response = await api.post(`/sponsors/${sponsorId}/approve`, {});
-      return {
-        success: true,
-        message: "Sponsor approved successfully",
-      };
-    } catch (error: any) {
-      console.error("Approve sponsor error:", error);
-      return {
-        success: false,
-        error: error.response?.data?.message || "Failed to approve sponsor",
-      };
-    }
+    const response = await api.post(`/sponsors/${sponsorId}/approve`, {});
+    return response;
   }
 
   // Reject sponsorship
 
   async rejectSponsor(sponsorId: ID): Promise<ApiResponse<null>> {
-    try {
-      const response = await api.post(`/sponsors/${sponsorId}/reject`, {});
-      return {
-        success: true,
-        message: "Sponsor rejected successfully",
-      };
-    } catch (error: any) {
-      console.error("Reject sponsor error:", error);
-      return {
-        success: false,
-        error: error.response?.data?.message || "Failed to reject sponsor",
-      };
-    }
+    const response = await api.post(`/sponsors/${sponsorId}/reject`, {});
+    return response;
   }
 }
 
