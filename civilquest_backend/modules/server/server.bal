@@ -266,6 +266,13 @@ service /api on httpListener {
         check participants:getUserAppliedEvents(caller, req);
     }
 
+    // Get sponsors created by the currently logged-in user
+    resource function get users/me/sponsors(http:Caller caller, http:Request req) returns error? {
+        check middleware:tokenValidation(caller, req);
+        check middleware:assertAnyRole(caller, req, ["USER", "PREMIUM_PENDING", "PREMIUM_USER", "ADMIN_OPERATOR"]);
+        check sponsors:getUserSponsors(caller, req);
+    }
+
     // Get user's participation status for a specific event
     resource function get events/[string eventId]/participation/me(http:Caller caller, http:Request req) returns error? {
         check middleware:tokenValidation(caller, req);
