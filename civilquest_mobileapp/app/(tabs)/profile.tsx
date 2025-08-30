@@ -18,7 +18,7 @@ import { Button, InputField, Loading } from "../../components";
 import { useAuth } from "../../hooks";
 import { globalStyles, COLORS, SPACING, LAYOUT } from "../../theme";
 import { userService } from "../../services/user";
-import { User } from "../../types";
+import { User, MySponsorItem } from "../../types";
 import { ComboBox } from "components/UI/ComboBox";
 import { mainCities } from "utils/cities";
 
@@ -31,6 +31,9 @@ export default function ProfileScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [sponsorsModalVisible, setSponsorsModalVisible] = useState(false);
+  const [mySponsors, setMySponsors] = useState<MySponsorItem[] | null>(null);
+  const [sponsorsLoading, setSponsorsLoading] = useState(false);
 
   // Edit form state
   const [editForm, setEditForm] = useState({
@@ -116,6 +119,23 @@ export default function ProfileScreen() {
         },
       },
     ]);
+  };
+
+  const loadMySponsors = async () => {
+    try {
+      setSponsorsLoading(true);
+      const res = await userService.getMySponsors();
+      if (res.success) {
+        setMySponsors(res.data || []);
+        setSponsorsModalVisible(true);
+      } else {
+        Alert.alert("Error", res.error || "Failed to load sponsors");
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to load sponsors");
+    } finally {
+      setSponsorsLoading(false);
+    }
   };
 
   const handleApplyPremium = async () => {
@@ -295,6 +315,16 @@ export default function ProfileScreen() {
       )}
 
       <Button
+        title="My Sponsors"
+        variant="secondary"
+        fullWidth
+        onPress={loadMySponsors}
+        loading={sponsorsLoading}
+        disabled={sponsorsLoading}
+        style={styles.actionButton}
+      />
+
+      <Button
         title="Logout"
         variant="danger"
         fullWidth
@@ -433,6 +463,65 @@ export default function ProfileScreen() {
         {renderProfileDetails()}
         {renderActions()}
       </ScrollView>
+      <Modal
+        visible={sponsorsModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setSponsorsModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity
+              onPress={() => setSponsorsModalVisible(false)}
+              style={styles.modalCloseButton}
+            >
+              <Ionicons name="close" size={24} color={COLORS.textPrimary} />
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>My Sponsors</Text>
+            <View style={styles.modalHeaderSpace} />
+          </View>
+
+          <ScrollView style={styles.modalContent}>
+            {sponsorsLoading && (
+              <Loading visible={true} message="Loading sponsors..." variant="overlay" />
+            )}
+            {!sponsorsLoading && (mySponsors?.length || 0) === 0 && (
+              <Text style={{ color: COLORS.textSecondary, padding: SPACING.md }}>
+                No sponsorships found.
+              </Text>
+            )}
+            {!sponsorsLoading && (mySponsors?.length || 0) > 0 && (
+              <View style={{ gap: SPACING.md }}>
+                {mySponsors!.map((s, idx) => (
+                  <View key={idx} style={styles.sponsorCard}>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                      <Text style={styles.sponsorTitle}>{s.eventTitle || "Event"}</Text>
+                      <Text
+                        style={[
+                          styles.badge,
+                          s.approvedStatus === "APPROVED"
+                            ? styles.badgeApproved
+                            : s.approvedStatus === "REJECTED"
+                            ? styles.badgeRejected
+                            : styles.badgePending,
+                        ]}
+                      >
+                        {s.approvedStatus}
+                      </Text>
+                    </View>
+                    <Text style={styles.sponsorMeta}>
+                      Type: {s.sponsorType}
+                      {s.amount != null ? ` • Amount: ${s.amount}` : ""}
+                    </Text>
+                    <Text style={styles.sponsorDesc}>{s.description}</Text>
+                    <Text style={styles.sponsorDate}>{new Date(s.createdAt).toLocaleString()}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+          </ScrollView>
+        </View>
+      </Modal>
       {renderEditModal()}
     </View>
   );
@@ -653,4 +742,40 @@ const styles = StyleSheet.create({
     marginTop: SPACING.lg,
     marginBottom: SPACING.xl,
   },
+  sponsorCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: LAYOUT.borderRadius.lg,
+    padding: SPACING.lg,
+    ...LAYOUT.shadows.sm,
+    marginBottom: SPACING.md,
+  },
+  sponsorTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: COLORS.textPrimary,
+  },
+  sponsorMeta: {
+    marginTop: SPACING.xs,
+    color: COLORS.textSecondary,
+  },
+  sponsorDesc: {
+    marginTop: SPACING.sm,
+    color: COLORS.textPrimary,
+  },
+  sponsorDate: {
+    marginTop: SPACING.xs,
+    color: COLORS.textTertiary,
+    fontSize: 12,
+  },
+  badge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    fontSize: 12,
+    overflow: "hidden",
+    color: COLORS.white,
+  },
+  badgeApproved: { backgroundColor: "#16a34a" },
+  badgeRejected: { backgroundColor: "#dc2626" },
+  badgePending: { backgroundColor: "#f59e0b" },
 });

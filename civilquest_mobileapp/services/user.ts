@@ -1,5 +1,5 @@
 import { api } from "./api";
-import { User, ApiResponse, ID, AppliedEvent } from "../types";
+import { User, ApiResponse, ID, AppliedEvent, MySponsorItem } from "../types";
 
 export interface UserProfile {
   username?: string;
@@ -33,6 +33,12 @@ class UserService {
   // Get user's applied events
   async getAppliedEvents(): Promise<ApiResponse<AppliedEvent[]>> {
     const response = await api.get<AppliedEvent[]>("/users/me/events/applied");
+    return response;
+  }
+
+  // Get sponsors created by the currently logged-in user
+  async getMySponsors(params?: { eventId?: string; approvedStatus?: string }): Promise<ApiResponse<MySponsorItem[]>> {
+    const response = await api.get<MySponsorItem[]>("/users/me/sponsors", params);
     return response;
   }
 }

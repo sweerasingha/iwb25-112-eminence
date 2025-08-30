@@ -297,3 +297,12 @@ export interface LeaderboardFilters {
   limit: number;
   search?: string;
 }
+
+export interface MySponsorItem {
+  sponsorType: string; // "AMOUNT" | "DONATION"
+  description: string;
+  amount?: number | null;
+  approvedStatus: string; // "PENDING" | "APPROVED" | "REJECTED"
+  eventTitle: string;
+  createdAt: string;
+}
