@@ -145,6 +145,21 @@ export interface SponsorshipRequest {
   description: string;
 }
 
+export interface Sponsorship {
+  _id: string;
+  id: string;
+  userId: string;
+  eventId: string;
+  sponsorType:  string; 
+  amount: number;
+  donationAmount: number | null;
+  donation: string | null;
+  description: string;
+  approvedStatus: "APPROVED" | "PENDING" | "REJECTED" | string; 
+  createdAt: string; 
+  updatedAt: string; 
+}
+
 export interface SponsorshipForm {
   sponsorType: string; // "AMOUNT" | "DONATION"
   amount?: string;

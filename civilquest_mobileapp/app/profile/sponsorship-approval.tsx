@@ -27,7 +27,7 @@ export default function SponsorshipApprovalScreen() {
 
   useEffect(() => {
     loadSponsorships();
-  }, [eventId]);
+  }, []);
 
   const loadSponsorships = async () => {
     try {

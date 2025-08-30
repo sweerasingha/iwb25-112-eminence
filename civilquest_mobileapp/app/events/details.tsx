@@ -69,7 +69,6 @@ export default function EventDetailsScreen() {
     try {
       await getCurrentLocation();
       if (errorMsg == null) {
-        console.log("location", location);
         const response = await eventService.participateInEvent({
           eventId: ev.id,
           latitude: location?.coords.latitude || 0,

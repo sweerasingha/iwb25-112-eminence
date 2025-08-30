@@ -61,7 +61,6 @@ class ApiService {
     this.authToken = token;
 
     if (token) {
-      console.log("Setting auth token:", token);
       this.axiosInstance.defaults.headers.common[
         "Authorization"
       ] = `Bearer ${token}`;
@@ -75,15 +74,15 @@ class ApiService {
     this.axiosInstance.interceptors.request.use(
       (config: InternalAxiosRequestConfig) => {
         // Log request in development
-        if (CONFIG.APP_ENV === "development" && CONFIG.ENABLE_LOGS) {
-          console.log("API Request:", {
-            method: config.method?.toUpperCase(),
-            url: config.url,
-            baseURL: config.baseURL,
-            headers: config.headers,
-            data: config.data,
-          });
-        }
+        // if (CONFIG.APP_ENV === "development" && CONFIG.ENABLE_LOGS) {
+        //   console.log("API Request:", {
+        //     method: config.method?.toUpperCase(),
+        //     url: config.url,
+        //     baseURL: config.baseURL,
+        //     headers: config.headers,
+        //     data: config.data,
+        //   });
+        // }
 
         // Add timestamp to requests
         config.metadata = { startTime: Date.now() };
@@ -100,17 +99,17 @@ class ApiService {
     this.axiosInstance.interceptors.response.use(
       (response: AxiosResponse) => {
         // Log response in development
-        if (CONFIG.APP_ENV === "development" && CONFIG.ENABLE_LOGS) {
-          const duration =
-            Date.now() - (response.config.metadata?.startTime || 0);
-          console.log("API Response:", {
-            method: response.config.method?.toUpperCase(),
-            url: response.config.url,
-            status: response.status,
-            duration: `${duration}ms`,
-            data: response.data,
-          });
-        }
+        // if (CONFIG.APP_ENV === "development" && CONFIG.ENABLE_LOGS) {
+        //   const duration =
+        //     Date.now() - (response.config.metadata?.startTime || 0);
+        //   console.log("API Response:", {
+        //     method: response.config.method?.toUpperCase(),
+        //     url: response.config.url,
+        //     status: response.status,
+        //     duration: `${duration}ms`,
+        //     data: response.data,
+        //   });
+        // }
 
         return response;
       },
