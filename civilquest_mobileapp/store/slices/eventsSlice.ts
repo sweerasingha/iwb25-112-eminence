@@ -92,9 +92,9 @@ export const fetchEventById = createAsyncThunk(
 
 export const createEvent = createAsyncThunk(
   "events/createEvent",
-  async (eventData: CreateEventForm, { rejectWithValue }) => {
+  async (eventData: any, { rejectWithValue }) => {
     try {
-      const response = await eventService.createEvent(eventData);
+      const response = await eventService.createEvent(eventData as any);
 
       if (response.success) {
         return response.data;
@@ -213,6 +213,22 @@ const eventsSlice = createSlice({
       state.myEvents.error = null;
       state.currentEvent.error = null;
     },
+    addEvent: (state, action: PayloadAction<Event>) => {
+      const raw = action.payload as any;
+      const eid: string = raw.id || raw._id;
+      const normalized: Event = { ...raw, id: eid, _id: raw._id || eid };
+
+      const upsertFront = (arr: Event[]) => {
+        const existingIdx = arr.findIndex((e) => (e.id || (e as any)._id) === eid);
+        if (existingIdx !== -1) {
+          arr.splice(existingIdx, 1);
+        }
+        arr.unshift(normalized);
+      };
+
+      upsertFront(state.events.data);
+      upsertFront(state.myEvents.data);
+    },
   },
   extraReducers: (builder) => {
     // Fetch events
@@ -223,7 +239,23 @@ const eventsSlice = createSlice({
       })
       .addCase(fetchEvents.fulfilled, (state, action) => {
         state.events.loading = "succeeded";
-        state.events.data = action.payload || [];
+        const incoming: any[] = action.payload || [];
+        const existing = state.events.data || [];
+        const idOf = (e: any) => e.id || e._id;
+        const indexById: Record<string, number> = {};
+        existing.forEach((e, i) => {
+          indexById[idOf(e)] = i;
+        });
+        const updated = [...existing];
+        for (const e of incoming) {
+          const id = idOf(e);
+          if (id in indexById) {
+            updated[indexById[id]] = { ...e, id: id, _id: e._id || id } as any;
+          } else {
+            updated.push({ ...e, id: id, _id: e._id || id } as any);
+          }
+        }
+        state.events.data = updated as any;
       })
       .addCase(fetchEvents.rejected, (state, action) => {
         state.events.loading = "failed";
@@ -321,7 +353,23 @@ const eventsSlice = createSlice({
       })
       .addCase(fetchMyEvents.fulfilled, (state, action) => {
         state.myEvents.loading = "succeeded";
-        state.myEvents.data = action.payload || [];
+        const incoming: any[] = action.payload || [];
+        const existing = state.myEvents.data || [];
+        const idOf = (e: any) => e.id || e._id;
+        const indexById: Record<string, number> = {};
+        existing.forEach((e, i) => {
+          indexById[idOf(e)] = i;
+        });
+        const updated = [...existing];
+        for (const e of incoming) {
+          const id = idOf(e);
+          if (id in indexById) {
+            updated[indexById[id]] = { ...e, id: id, _id: e._id || id } as any;
+          } else {
+            updated.push({ ...e, id: id, _id: e._id || id } as any);
+          }
+        }
+        state.myEvents.data = updated as any;
       })
       .addCase(fetchMyEvents.rejected, (state, action) => {
         state.myEvents.loading = "failed";
@@ -344,6 +392,6 @@ const eventsSlice = createSlice({
   },
 });
 
-export const { clearCurrentEvent, setFilters, clearFilters, clearEventsError } =
+export const { clearCurrentEvent, setFilters, clearFilters, clearEventsError, addEvent } =
   eventsSlice.actions;
 export default eventsSlice.reducer;
