@@ -1,18 +1,18 @@
 # CivilQuest API
 
-A comprehensive civic engagement platform built with Ballerina, enabling citizens to participate in community events, sponsor initiatives, and earn points for civic contributions.
+A comprehensive community engagement platform built with Ballerina, enabling citizens to participate in community events, sponsor initiatives, and earn points for community contributions.
 
 ## Project Structure
 
 ```
 civilquest_api/
-├── main.bal                                    # Application entry point
-├── Ballerina.toml                             # Project configuration
-├── Config.toml                                # Application configuration
-├── Dependencies.toml                          # Dependencies specification
-├── keys/                                      # SSL certificates and keys
-├── modules/                                   # Core application modules
-│   ├── analytics/                            # Analytics and reporting
+├── main.bal                                 # Application entry point
+├── Ballerina.toml                           # Project configuration
+├── Config.toml                              # Application configuration
+├── Dependencies.toml                        # Dependencies specification
+├── keys/                                    # SSL certificates and keys
+├── modules/                                 # Core application modules
+│   ├── analytics/                           # Analytics and reporting
 │   ├── audit/                               # Audit logging system
 │   ├── auth/                                # Authentication & authorization
 │   ├── bcrypt/                              # Password hashing utilities
@@ -23,7 +23,7 @@ civilquest_api/
 │   ├── events/                              # Event management
 │   ├── middleware/                          # Authentication middleware
 │   ├── notifications/                       # Notification system
-│   ├── otp/                                # OTP generation and verification
+│   ├── otp/                                 # OTP generation and verification
 │   ├── participants/                        # Event participation
 │   ├── points/                              # Points system
 │   ├── server/                              # HTTP server and routing
@@ -84,7 +84,7 @@ SUPER_ADMIN
 - **Multi-tier Administration**: Super Admin → Admin → Admin Operator hierarchy
 - **Event Lifecycle Management**: Creation → Approval → Participation → Completion
 - **Flexible Sponsorship**: Users and organizations can sponsor events
-- **Points-based Rewards**: Configurable point system for civic engagement
+- **Points-based Rewards**: Configurable point system for community engagement
 - **Comprehensive Auditing**: All administrative actions are logged
 - **Real-time Notifications**: Users receive updates on relevant activities
 - **Analytics Dashboard**: Insights into participation, events, and sponsorships
