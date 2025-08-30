@@ -9,23 +9,14 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS, SPACING, LAYOUT } from "../../theme";
-import { Event } from "../../types";
+import { Event, Sponsorship } from "../../types";
 
-interface Sponsor {
-  id: string;
-  userId: string;
-  amount: string;
-  description?: string;
-  sponsorType?: string;
-  approvedStatus: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
+
 
 interface SponsorsModalProps {
   visible: boolean;
   event: Event | null;
-  sponsors: Sponsor[];
+  sponsors: Sponsorship[];
   sponsorActions: { [key: string]: boolean };
   onClose: () => void;
   onApproveSponsor: (sponsorId: string) => void;
@@ -53,6 +44,7 @@ export default function SponsorsModal({
         return COLORS.textSecondary;
     }
   };
+  console.log("Sponsors:", sponsors);
 
   return (
     <Modal

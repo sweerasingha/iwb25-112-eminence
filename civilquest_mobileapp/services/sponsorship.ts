@@ -22,7 +22,10 @@ class SponsorshipService {
       if (typeof sponsorshipData.donationAmount === "number") {
         payload.donationAmount = sponsorshipData.donationAmount;
       }
-      if (typeof sponsorshipData.donation === "string" && sponsorshipData.donation.trim().length > 0) {
+      if (
+        typeof sponsorshipData.donation === "string" &&
+        sponsorshipData.donation.trim().length > 0
+      ) {
         payload.donation = sponsorshipData.donation.trim();
       }
     }
@@ -36,9 +39,8 @@ class SponsorshipService {
   async getEventSponsorships(
     eventId: string
   ): Promise<ApiResponse<Sponsorship[]>> {
-    const response = await api.get<Sponsorship[]>(
-      `/sponsorships/event/${eventId}`
-    );
+    const response = await api.get<Sponsorship[]>(`sponsors`);
+    console.log("sssssssssssssssssssssss", response);
     return response;
   }
 

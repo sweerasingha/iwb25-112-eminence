@@ -6,6 +6,7 @@ import {
   PaginatedResponse,
   ID,
   EventStatus,
+  Sponsorship,
 } from "../types";
 
 export interface ParticipationRequest {
@@ -118,19 +119,12 @@ class EventService {
   }
 
   async getMyEvents(): Promise<ApiResponse<Event[]>> {
-    console.log("getMyEvents: Starting to fetch events");
     const response = await api.get("/events");
 
     if (!response.success) {
       console.log("getMyEvents: API Error:", response.error);
       return response;
     }
-
-    console.log(
-      "getMyEvents: API response received:",
-      response.data?.length,
-      "events"
-    );
 
     if (!response.data) {
       console.log("getMyEvents: No data in response");
@@ -143,10 +137,8 @@ class EventService {
 
     // Get current user email from token
     const currentUserEmail = api.getCurrentUserEmail();
-    console.log("getMyEvents: Current user email:", currentUserEmail);
 
     if (!currentUserEmail) {
-      console.log("getMyEvents: No current user email found");
       return {
         success: false,
         error: "Authentication required",
@@ -157,13 +149,6 @@ class EventService {
     const myEvents = response.data.filter(
       (event: Event) => event.createdBy === currentUserEmail
     );
-
-    console.log("getMyEvents: Filtered events for user:", {
-      totalEvents: response.data.length,
-      myEventsCount: myEvents.length,
-      myEvents: myEvents,
-      currentUserEmail: currentUserEmail,
-    });
 
     return {
       success: true,
@@ -199,26 +184,28 @@ class EventService {
   }
 
   async getEventSponsors(eventId: ID): Promise<ApiResponse<any[]>> {
-    const response = await api.get(`/events/${eventId}`);
+    const response = await api.get(`sponsors`);
     if (!response.success) {
-      return response;
+      console.log("getEventSponsors: API Response:", response.data.length);
+      return response.data;
     }
 
-    const event = response.data as Event;
     return {
       success: true,
-      data: (event as any).sponsors || event.sponsor || [],
+      data: response.data.filter(
+        (sponsor: Sponsorship) => eventId === sponsor.eventId
+      ),
       message: response.message || "Sponsors fetched successfully",
     };
   }
 
   async approveSponsor(sponsorId: ID): Promise<ApiResponse<null>> {
-    const response = await api.post(`/sponsors/${sponsorId}/approve`, {});
+    const response = await api.put(`/sponsors/${sponsorId}/approve`, {});
     return response;
   }
 
   async rejectSponsor(sponsorId: ID): Promise<ApiResponse<null>> {
-    const response = await api.post(`/sponsors/${sponsorId}/reject`, {});
+    const response = await api.put(`/sponsors/${sponsorId}/reject`, {});
     return response;
   }
 

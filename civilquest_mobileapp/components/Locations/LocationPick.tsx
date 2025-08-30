@@ -40,7 +40,6 @@ export default function LocationPicker({ style }: any) {
   const handleSelectLocation = (event: any) => {
     const { latitude, longitude } = event.nativeEvent.coordinate;
     setSelectedLocation({ latitude, longitude });
-    console.log("Selected Location:", latitude, longitude);
   };
 
   if (!initialRegion) {

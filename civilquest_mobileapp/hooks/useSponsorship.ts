@@ -46,9 +46,7 @@ export const useSponsorship = () => {
         sponsorshipData
       );
 
-      console.log("Hook received response:", response);
-      console.log("Response success:", response.success);
-      console.log("Response success type:", typeof response.success);
+
 
       if (response.success) {
         return true;

@@ -40,7 +40,6 @@ class AuthService {
         payload.data?.accessToken;
       const message: string | undefined =
         result.message || payload.message || payload.data?.message;
-      console.log("Token received:", !!token);
 
       if (!token) {
         return {
