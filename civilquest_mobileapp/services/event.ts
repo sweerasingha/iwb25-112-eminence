@@ -184,17 +184,18 @@ class EventService {
   }
 
   async getEventSponsors(eventId: ID): Promise<ApiResponse<any[]>> {
-    const response = await api.get(`sponsors`);
+    const response = await api.get<any[]>(`/sponsors`, { eventId });
     if (!response.success) {
-      console.log("getEventSponsors: API Response:", response.data.length);
-      return response.data;
+      return {
+        success: false,
+        error: response.error || "Failed to fetch sponsors",
+        data: [],
+      };
     }
 
     return {
       success: true,
-      data: response.data.filter(
-        (sponsor: Sponsorship) => eventId === sponsor.eventId
-      ),
+      data: response.data || [],
       message: response.message || "Sponsors fetched successfully",
     };
   }

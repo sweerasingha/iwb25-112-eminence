@@ -21,6 +21,9 @@ export const useManageEvents = () => {
   const [sponsorActions, setSponsorActions] = useState<{
     [key: string]: boolean;
   }>({});
+  const [sponsorActionType, setSponsorActionType] = useState<{
+    [key: string]: "approve" | "reject" | null;
+  }>({});
   const [participationActions, setParticipationActions] = useState<{
     [key: string]: boolean;
   }>({});
@@ -184,6 +187,7 @@ export const useManageEvents = () => {
   const handleApproveSponsor = async (sponsorId: string) => {
     try {
       setSponsorActions((prev) => ({ ...prev, [sponsorId]: true }));
+      setSponsorActionType((prev) => ({ ...prev, [sponsorId]: "approve" }));
       const response = await eventService.approveSponsor(sponsorId);
 
       if (response.success) {
@@ -205,7 +209,8 @@ export const useManageEvents = () => {
     } catch (error) {
       Alert.alert("Error", "Failed to approve sponsor");
     } finally {
-      setSponsorActions((prev) => ({ ...prev, [sponsorId]: false }));
+        setSponsorActions((prev) => ({ ...prev, [sponsorId]: false }));
+        setSponsorActionType((prev) => ({ ...prev, [sponsorId]: null }));
     }
   };
 
@@ -221,6 +226,7 @@ export const useManageEvents = () => {
           onPress: async () => {
             try {
               setSponsorActions((prev) => ({ ...prev, [sponsorId]: true }));
+              setSponsorActionType((prev) => ({ ...prev, [sponsorId]: "reject" }));
               const response = await eventService.rejectSponsor(sponsorId);
 
               if (response.success) {
@@ -246,6 +252,7 @@ export const useManageEvents = () => {
               Alert.alert("Error", "Failed to reject sponsor");
             } finally {
               setSponsorActions((prev) => ({ ...prev, [sponsorId]: false }));
+              setSponsorActionType((prev) => ({ ...prev, [sponsorId]: null }));
             }
           },
         },
@@ -264,6 +271,7 @@ export const useManageEvents = () => {
     sponsors,
     loadingSponsors,
     sponsorActions,
+    sponsorActionType,
     participationActions,
     updating,
 

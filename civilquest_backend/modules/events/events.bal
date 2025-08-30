@@ -181,61 +181,27 @@ function toPlainJsonMap(json j) returns map<json> {
 // Get approved sponsors for a given event
 function getApprovedSponsorsJson(string eventId) returns json[] {
     json[] sponsorsDetailed = [];
-    stream<record {|
-        string _id;
-        string id?;
-        string userId;
-        string eventId;
-        string sponsorType;
-        float? amount;
-        float? donationAmount;
-        string? donation;
-        string description;
-        string approvedStatus;
-        string createdAt;
-        string updatedAt;
-    |}, error?>|error sponsorStream = sponsorCollection->find({"eventId": eventId, "approvedStatus": "APPROVED"});
-    if sponsorStream is stream<record {|
-        string _id;
-        string id?;
-        string userId;
-        string eventId;
-        string sponsorType;
-        float? amount;
-        float? donationAmount;
-        string? donation;
-        string description;
-        string approvedStatus;
-        string createdAt;
-        string updatedAt;
-    |}, error?> {
-        error? forEachResult = sponsorStream.forEach(function(record {|
-                    string _id;
-                    string id?;
-                    string userId;
-                    string eventId;
-                    string sponsorType;
-                    float? amount;
-                    float? donationAmount;
-                    string? donation;
-                    string description;
-                    string approvedStatus;
-                    string createdAt;
-                    string updatedAt;
-                |} s) {
-            sponsorsDetailed.push({
-                _id: s._id,
-                id: s.id,
-                userId: s.userId,
-                sponsorType: s.sponsorType,
-                amount: s.amount,
-                donationAmount: s.donationAmount,
-                donation: s.donation,
-                description: s.description,
-                approvedStatus: s.approvedStatus,
-                createdAt: s.createdAt,
-                updatedAt: s.updatedAt
-            });
+    stream<RawDoc, error?>|error sponsorStream = sponsorCollection->find({"eventId": eventId, "approvedStatus": "APPROVED"});
+    if sponsorStream is stream<RawDoc, error?> {
+        error? forEachResult = sponsorStream.forEach(function(RawDoc s) {
+            map<json> m = toPlainJsonMap(s);
+            anydata|() _idv = m.hasKey("_id") ? m["_id"] : ();
+            string sid = _idv is string ? _idv : (_idv is () ? "" : _idv.toString());
+
+            map<json> out = {
+                _id: sid,
+                id: m.hasKey("id") ? m["id"] : sid,
+                userId: m.hasKey("userId") ? m["userId"] : (),
+                sponsorType: m.hasKey("sponsorType") ? m["sponsorType"] : (),
+                amount: m.hasKey("amount") ? m["amount"] : (),
+                donationAmount: m.hasKey("donationAmount") ? m["donationAmount"] : (),
+                donation: m.hasKey("donation") ? m["donation"] : (),
+                description: m.hasKey("description") ? m["description"] : (),
+                approvedStatus: m.hasKey("approvedStatus") ? m["approvedStatus"] : (),
+                createdAt: m.hasKey("createdAt") ? m["createdAt"] : (),
+                updatedAt: m.hasKey("updatedAt") ? m["updatedAt"] : ()
+            };
+            sponsorsDetailed.push(out);
         });
         if forEachResult is error {
             // ignore errors and return what we have

@@ -24,6 +24,9 @@ export default function SponsorshipApprovalScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [processingAction, setProcessingAction] = useState<
+    "approve" | "reject" | null
+  >(null);
 
   useEffect(() => {
     loadSponsorships();
@@ -65,6 +68,7 @@ export default function SponsorshipApprovalScreen() {
           onPress: async () => {
             try {
               setProcessingId(sponsorshipId);
+              setProcessingAction("approve");
               const response = await sponsorshipService.approveSponsor(
                 sponsorshipId
               );
@@ -81,6 +85,7 @@ export default function SponsorshipApprovalScreen() {
             } catch (error) {
               Alert.alert("Error", "Failed to approve sponsorship");
             } finally {
+              setProcessingAction(null);
               setProcessingId(null);
             }
           },
@@ -101,6 +106,7 @@ export default function SponsorshipApprovalScreen() {
           onPress: async () => {
             try {
               setProcessingId(sponsorshipId);
+              setProcessingAction("reject");
               const response = await sponsorshipService.rejectSponsor(
                 sponsorshipId
               );
@@ -117,6 +123,7 @@ export default function SponsorshipApprovalScreen() {
             } catch (error) {
               Alert.alert("Error", "Failed to reject sponsorship");
             } finally {
+              setProcessingAction(null);
               setProcessingId(null);
             }
           },
@@ -194,7 +201,7 @@ export default function SponsorshipApprovalScreen() {
               variant="primary"
               size="small"
               onPress={() => handleApprove(item.id)}
-              loading={processingId === item.id}
+              loading={processingId === item.id && processingAction === "approve"}
               disabled={processingId !== null}
               style={styles.approveButton}
             />
@@ -203,7 +210,7 @@ export default function SponsorshipApprovalScreen() {
               variant="danger"
               size="small"
               onPress={() => handleReject(item.id)}
-              loading={processingId === item.id}
+              loading={processingId === item.id && processingAction === "reject"}
               disabled={processingId !== null}
               style={styles.rejectButton}
             />

@@ -172,7 +172,7 @@ export default function ManageEventCard({
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <Ionicons name="gift" size={18} color={COLORS.success} />
-              <Text style={styles.statValue}>₨{event.reward}</Text>
+              <Text style={styles.statValue}>{event.reward}</Text>
               <Text style={styles.statLabel}>Reward</Text>
             </View>
             <View style={styles.statDivider} />
