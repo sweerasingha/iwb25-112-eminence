@@ -35,6 +35,23 @@ export const EventCard: React.FC<EventCardProps> = ({
     });
   };
 
+  // Match Event Details logic: event is Ongoing if current time >= start time (ignoring end time)
+  // Time-based status: UPCOMING | ONGOING | null
+  const timeStatus: "UPCOMING" | "ONGOING" | null = (() => {
+    try {
+      if (!event?.date || !event?.startTime) return null;
+      // Normalize time to include seconds to avoid parsing edge cases
+      const normalize = (t: string) => (t.length === 5 ? `${t}:00` : t);
+      const start = new Date(`${event.date}T${normalize(event.startTime)}`);
+      if (isNaN(start.getTime())) return null;
+      const now = new Date();
+      if (now < start) return "UPCOMING";
+      return "ONGOING";
+    } catch {
+      return null;
+    }
+  })();
+
   const getStatusConfig = (status: string) => {
     switch (status) {
       case "APPROVED":
@@ -68,7 +85,12 @@ export const EventCard: React.FC<EventCardProps> = ({
     }
   };
 
-  const statusConfig = getStatusConfig(event.status);
+  // Prefer time-based status when available; otherwise fall back to approval status
+  const statusConfig = timeStatus
+    ? timeStatus === "ONGOING"
+      ? { color: COLORS.info, bg: COLORS.infoBg, icon: "flash", text: "Ongoing" }
+      : { color: COLORS.info, bg: COLORS.infoBg, icon: "time", text: "Upcoming" }
+    : getStatusConfig(event.status);
 
   const renderCompactCard = () => (
     <TouchableOpacity
@@ -181,12 +203,11 @@ export const EventCard: React.FC<EventCardProps> = ({
                 {event.participantCount || event.participant.length}
               </Text>
             </View>
-
-            {event.sponsor.length > 0 && (
+                {(event.sponsors?.length ?? event.sponsor.length) > 0 && (
               <View style={styles.statItem}>
                 <Ionicons name="diamond" size={16} color={COLORS.secondary} />
                 <Text style={[globalStyles.caption, styles.statText]}>
-                  {event.sponsor.length}
+                  {event.sponsors?.length ?? event.sponsor.length}
                 </Text>
               </View>
             )}
@@ -312,9 +333,9 @@ export const EventCard: React.FC<EventCardProps> = ({
             <Text style={[globalStyles.caption, styles.statText]}>
               👥 {event.participantCount || event.participant.length}
             </Text>
-            {event.sponsor.length > 0 && (
+              {(event.sponsors?.length ?? event.sponsor.length) > 0 && (
               <Text style={[globalStyles.caption, styles.statText]}>
-                {event.sponsor.length}
+              {event.sponsors?.length ?? event.sponsor.length}
               </Text>
             )}
           </View>

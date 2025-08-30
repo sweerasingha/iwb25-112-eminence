@@ -207,18 +207,18 @@ class EventService {
     const event = response.data as Event;
     return {
       success: true,
-      data: event.sponsor || [],
+      data: (event as any).sponsors || event.sponsor || [],
       message: response.message || "Sponsors fetched successfully",
     };
   }
 
   async approveSponsor(sponsorId: ID): Promise<ApiResponse<null>> {
-    const response = await api.put(`/sponsors/${sponsorId}/approve`, {});
+    const response = await api.post(`/sponsors/${sponsorId}/approve`, {});
     return response;
   }
 
   async rejectSponsor(sponsorId: ID): Promise<ApiResponse<null>> {
-    const response = await api.put(`/sponsors/${sponsorId}/reject`, {});
+    const response = await api.post(`/sponsors/${sponsorId}/reject`, {});
     return response;
   }
 

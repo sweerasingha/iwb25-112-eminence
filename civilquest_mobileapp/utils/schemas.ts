@@ -67,24 +67,49 @@ export const createEventSchema = z.object({
   image_url: z.string().url("Invalid image URL").optional().or(z.literal("")),
 });
 
-export const sponsorshipSchema = z.object({
-  sponsorType: z.string().min(1, "Sponsor type is required"),
-  donationAmount: z
-    .string()
-    .min(1, "Donation amount is required")
-    .refine((val) => {
-      const num = parseFloat(val);
-      return !isNaN(num) && num > 0;
-    }, "Please enter a valid amount greater than 0"),
-  donation: z
-    .string()
-    .min(3, "Donation description must be at least 3 characters")
-    .max(200, "Donation description must be less than 200 characters"),
-  description: z
-    .string()
-    .min(10, "Description must be at least 10 characters")
-    .max(500, "Description must be less than 500 characters"),
-});
+export const sponsorshipSchema = z
+  .object({
+    sponsorType: z.enum(["AMOUNT", "DONATION"] as const),
+    amount: z.string().optional().default(""),
+    donationAmount: z.string().optional().default(""),
+    donation: z.string().optional().default(""),
+    description: z
+      .string()
+      .min(10, "Description must be at least 10 characters")
+      .max(500, "Description must be less than 500 characters"),
+  })
+  .superRefine((data, ctx) => {
+    if (data.sponsorType === "AMOUNT") {
+      if (!data.amount || isNaN(Number(data.amount)) || Number(data.amount) <= 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Amount must be a positive number",
+          path: ["amount"],
+        });
+      }
+    } else if (data.sponsorType === "DONATION") {
+      const hasDonationAmount = !!data.donationAmount && !isNaN(Number(data.donationAmount)) && Number(data.donationAmount) > 0;
+      const hasDonationText = !!data.donation && data.donation.trim().length > 0;
+      if (!hasDonationAmount && !hasDonationText) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Provide donation amount or details",
+          path: ["donationAmount"],
+        });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Provide donation amount or details",
+          path: ["donation"],
+        });
+      } else if (!!data.donationAmount && (isNaN(Number(data.donationAmount)) || Number(data.donationAmount) <= 0)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Donation amount must be a positive number",
+          path: ["donationAmount"],
+        });
+      }
+    }
+  });
 
 export const sponsorshipApplicationSchema = z.object({
   eventId: z.string().min(1, "Event ID is required"),

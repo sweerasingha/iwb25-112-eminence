@@ -178,7 +178,9 @@ export default function ManageEventCard({
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <Ionicons name="star" size={18} color={COLORS.warning} />
-              <Text style={styles.statValue}>{event.sponsor?.length || 0}</Text>
+              <Text style={styles.statValue}>
+                {event.sponsors?.length ?? event.sponsor?.length ?? 0}
+              </Text>
               <Text style={styles.statLabel}>Sponsors</Text>
             </View>
           </View>

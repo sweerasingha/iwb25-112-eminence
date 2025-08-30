@@ -28,10 +28,19 @@ export const useSponsorship = () => {
         userId,
         eventId,
         sponsorType: formData.sponsorType,
-        donationAmount: parseFloat(formData.donationAmount),
-        donation: formData.donation,
         description: formData.description,
       };
+
+      if (formData.sponsorType === "AMOUNT") {
+        sponsorshipData.amount = formData.amount
+          ? parseFloat(formData.amount)
+          : undefined;
+      } else if (formData.sponsorType === "DONATION") {
+        sponsorshipData.donationAmount = formData.donationAmount
+          ? parseFloat(formData.donationAmount)
+          : undefined;
+        sponsorshipData.donation = formData.donation;
+      }
 
       const response = await sponsorshipService.createSponsorship(
         sponsorshipData
@@ -137,51 +146,16 @@ export const useSponsorship = () => {
   };
 
  
-  const validateSponsorshipForm = (
-    form: SponsorshipForm
-  ): { isValid: boolean; errors: string[] } => {
+  const validateSponsorshipForm = (form: SponsorshipForm): { isValid: boolean; errors: string[] } => {
     const errors: string[] = [];
-
-    if (!form.sponsorType.trim()) {
-      errors.push("Sponsor type is required");
-    }
-
-    if (!form.donationAmount.trim()) {
-      errors.push("Donation amount is required");
-    } else {
-      const amount = parseFloat(form.donationAmount);
-      if (isNaN(amount) || amount <= 0) {
-        errors.push("Donation amount must be a valid positive number");
-      }
-    }
-
-    if (!form.donation.trim()) {
-      errors.push("Donation description is required");
-    }
-
-    if (!form.description.trim()) {
-      errors.push("Description is required");
-    }
-
-    return {
-      isValid: errors.length === 0,
-      errors,
-    };
+    if (!form.sponsorType) errors.push("Sponsor type is required");
+    if (!form.description?.trim()) errors.push("Description is required");
+    return { isValid: errors.length === 0, errors };
   };
 
 
     // Get predefined sponsor types
-  const getSponsorTypes = () => [
-    "DONATION",
-    "EQUIPMENT",
-    "FOOD",
-    "BEVERAGE",
-    "TRANSPORTATION",
-    "VENUE",
-    "MARKETING",
-    "TECHNOLOGY",
-    "OTHER",
-  ];
+  const getSponsorTypes = () => ["AMOUNT", "DONATION"] as const;
 
   return {
     // State

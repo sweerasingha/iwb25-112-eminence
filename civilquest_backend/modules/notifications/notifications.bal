@@ -146,7 +146,7 @@ public isolated function notifyEventApproval(string creatorEmail, string eventTi
 public isolated function notifyPremiumApproval(string userEmail, boolean approved) returns error? {
     string title = approved ? "Premium Status Approved" : "Premium Status Rejected";
     string message = approved ?
-        "Congratulations! Your premium user application has been approved. You now have access to premium features." :
+        "Congratulations! Your premium user application has been approved. You now have access to premium features. Please log out and login again." :
         "Your premium user application has been rejected. Please contact support for more information.";
 
     string notifType = approved ? "PREMIUM_APPROVED" : "PREMIUM_REJECTED";

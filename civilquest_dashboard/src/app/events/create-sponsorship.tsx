@@ -16,16 +16,48 @@ interface CreateSponsorshipProps {
   handleClose: () => void;
 }
 
-const createSponsorshipSchema = z.object({
-  sponsorType: z.string().min(1, "Sponsor type is required"),
-  amount: z
-    .string()
-    .min(1, "Amount is required")
-    .refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
-      message: "Amount must be a positive number",
-    }),
-  description: z.string().min(10, "Description must be at least 10 characters"),
-});
+const createSponsorshipSchema = z
+  .object({
+    sponsorType: z.enum(["AMOUNT", "DONATION"] as const),
+    amount: z.string().optional().default(""),
+    donationAmount: z.string().optional().default(""),
+    donation: z.string().optional().default(""),
+    description: z
+      .string()
+      .min(10, "Description must be at least 10 characters"),
+  })
+  .superRefine((data, ctx) => {
+    if (data.sponsorType === "AMOUNT") {
+      if (!data.amount || isNaN(Number(data.amount)) || Number(data.amount) <= 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Amount must be a positive number",
+          path: ["amount"],
+        });
+      }
+    } else if (data.sponsorType === "DONATION") {
+      const hasDonationAmount = !!data.donationAmount && !isNaN(Number(data.donationAmount)) && Number(data.donationAmount) > 0;
+      const hasDonationText = !!data.donation && data.donation.trim().length > 0;
+      if (!hasDonationAmount && !hasDonationText) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Provide donation amount or details",
+          path: ["donationAmount"],
+        });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Provide donation amount or details",
+          path: ["donation"],
+        });
+      } else if (!!data.donationAmount && (isNaN(Number(data.donationAmount)) || Number(data.donationAmount) <= 0)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Donation amount must be a positive number",
+          path: ["donationAmount"],
+        });
+      }
+    }
+  });
 
 const CreateSponsorship = ({
   handleClose,
@@ -34,10 +66,12 @@ const CreateSponsorship = ({
   const { user } = useUserContext();
   const useSponsorHook = useSponsorRequest();
 
-  const { formData, handleChange, errors, validate } = useForm(
+  const { formData, handleChange, errors, validate, setFormData } = useForm(
     {
-      sponsorType: "Gold",
+      sponsorType: "AMOUNT",
       amount: "",
+      donationAmount: "",
+      donation: "",
       description: "",
     },
     createSponsorshipSchema
@@ -50,16 +84,37 @@ const CreateSponsorship = ({
     }
 
     try {
-      const result = await useSponsorHook.createSponsorship({
-        adminOperatorId: user?.email!,
-        eventId: eventId,
+      const adminOperatorId = String(user?.email || "").trim();
+      if (!adminOperatorId) {
+        toast.error("Missing admin operator identity");
+        return;
+      }
+
+      const eid = String(eventId || "").trim();
+      if (!eid) {
+        toast.error("Invalid event id");
+        return;
+      }
+
+      const payload: any = {
+        adminOperatorId,
+        eventId: eid,
         sponsorType: formData.sponsorType,
-        amount: Number(formData.amount),
         description: formData.description,
-      });
+      };
+      if (formData.sponsorType === "AMOUNT") {
+        payload.amount = Number(formData.amount);
+      } else {
+        if (formData.donationAmount) payload.donationAmount = Number(formData.donationAmount);
+        if (formData.donation) payload.donation = formData.donation;
+      }
+
+      const result = await useSponsorHook.createSponsorship(payload);
 
       if (result.success) {
         handleClose();
+      } else if (result.error) {
+        toast.error(result.error);
       }
     } catch (error) {
       console.error("Error creating sponsorship:", error);
@@ -67,40 +122,67 @@ const CreateSponsorship = ({
   };
 
   const sponsorTypes = [
-    { value: "Gold", label: "Gold Sponsor" },
-    { value: "Silver", label: "Silver Sponsor" },
-    { value: "Bronze", label: "Bronze Sponsor" },
-    { value: "Platinum", label: "Platinum Sponsor" },
-    { value: "Title", label: "Title Sponsor" },
-    { value: "Partner", label: "Partner" },
+    { value: "AMOUNT", name: "Money (Amount)" },
+    { value: "DONATION", name: "In-kind Donation" },
   ];
 
   return (
     <div className="">
       <ComboBox
         label="Sponsorship Type"
-        name={"Sponsorship Type"}
-        options={[{ value: "AMOUNT", name: "AMOUNT" }]}
+        name={"sponsorType"}
+        options={sponsorTypes}
         value={formData.sponsorType}
-        onChange={handleChange}
-        error={errors.sponsorType}
+        onChange={(e) => {
+          handleChange(e as any);
+          // reset conditional fields when type changes
+          const nextType = (e.target as HTMLSelectElement).value;
+          if (nextType === "AMOUNT") {
+            setFormData((prev: any) => ({ ...prev, donationAmount: "", donation: "" }));
+          } else {
+            setFormData((prev: any) => ({ ...prev, amount: "" }));
+          }
+        }}
+        error={errors.sponsorType as string}
       />
 
-      <InputField
-        name="amount"
-        label="Amount *"
-        value={formData.amount}
-        onChange={handleChange}
-        error={errors.amount}
-        type="number"
-      />
+      {formData.sponsorType === "AMOUNT" && (
+        <InputField
+          name="amount"
+          label="Amount *"
+          value={formData.amount}
+          onChange={handleChange}
+          error={errors.amount as string}
+          type="number"
+        />
+      )}
+
+      {formData.sponsorType === "DONATION" && (
+        <>
+          <InputField
+            name="donationAmount"
+            label="Donation Amount (optional)"
+            value={formData.donationAmount}
+            onChange={handleChange}
+            error={errors.donationAmount as string}
+            type="number"
+          />
+          <TextAreaField
+            name="donation"
+            label="Donation Details (optional)"
+            value={formData.donation}
+            onChange={handleChange}
+            error={errors.donation as string}
+          />
+        </>
+      )}
 
       <TextAreaField
         name="description"
         label="Description *"
         value={formData.description}
-        onChange={handleChange as any}
-        error={errors.description}
+        onChange={handleChange}
+        error={errors.description as string}
       />
 
       <div className="flex justify-center space-x-4 pt-4">

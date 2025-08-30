@@ -4,8 +4,13 @@ import Cookies from "js-cookie";
 import { STORAGE_KEYS } from "@/config";
 const computedBaseUrl = (() => {
   const envUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
-  const direct = envUrl && envUrl !== "undefined" ? envUrl : "http://localhost:4444/api";
-  return direct.replace(/\/$/, "");
+  if (envUrl && envUrl !== "undefined") {
+    return envUrl.replace(/\/$/, "");
+  }
+  if (typeof window !== "undefined") {
+    return "/api";
+  }
+  return "http://localhost:4444/api";
 })();
 
 const apiService = axios.create({
@@ -77,9 +82,10 @@ apiService.interceptors.response.use(
   (response) => response.data,
   (error) => {
   const errorMessage = getErrorMessage(error);
+    const isSilent = error?.config?.headers?.["x-silent-error"] === "1";
 
     if (error.response && error.response.status === 403) {
-      toast.error("Your not Authorized for this action");
+      if (!isSilent) toast.error("Your not Authorized for this action");
       return Promise.reject(error); 
     }
 
@@ -88,7 +94,11 @@ apiService.interceptors.response.use(
       localStorage.removeItem(STORAGE_KEYS.USER_TOKEN);
       window.location.href = "/";
     }
-    toast.error(errorMessage || "Request failed");
+    // Suppress noisy network/CORS errors or when explicitly silenced
+    const isNetworkError = !error.response && !!error.request;
+    if (!isSilent && !isNetworkError) {
+      toast.error(errorMessage || "Request failed");
+    }
 
     return Promise.reject(error);
   }

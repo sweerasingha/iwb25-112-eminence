@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React from "react";
 
 type StaticButtonProps = {
   onClick: () => void;
@@ -21,16 +21,14 @@ const StaticButton: React.FC<StaticButtonProps> = ({
     }
   };
 
+  const baseClasses =
+    "flex cursor-pointer items-center justify-center gap-2 my-2 px-4 py-2 rounded-md text-white font-medium transition bg-primary hover:bg-secondary disabled:opacity-60 disabled:cursor-not-allowed";
+
   return (
     <button
       onClick={handleClick}
       disabled={disabled}
-      className={
-        className
-          ? className
-          : `flex cursor-pointer items-center justify-center gap-2 my-2 px-4 py-2 rounded-md text-white font-medium transition
-        bg-primary hover:bg-secondary disabled:opacity-60 disabled:cursor-not-allowed `
-      }
+      className={`${baseClasses}${className ? ` ${className}` : ""}`}
     >
       {children}
     </button>

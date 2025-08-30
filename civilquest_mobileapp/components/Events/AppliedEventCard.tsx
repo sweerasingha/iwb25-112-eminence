@@ -26,13 +26,31 @@ export const AppliedEventCard: React.FC<AppliedEventCardProps> = ({
     });
   };
 
+  // Time-based status: UPCOMING | ONGOING | ENDED | null
+  const timeStatus: "UPCOMING" | "ONGOING" | "ENDED" | null = (() => {
+    try {
+      if (!event?.date || !event?.startTime || !event?.endTime) return null;
+      const start = new Date(`${event.date}T${event.startTime}`);
+      const end = new Date(`${event.date}T${event.endTime}`);
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) return null;
+      const now = new Date();
+      if (now < start) return "UPCOMING";
+      if (now >= end) return "ENDED";
+      return "ONGOING";
+    } catch {
+      return null;
+    }
+  })();
+
   const getStatusColor = () => {
+    if (timeStatus === "ONGOING") return COLORS.info;
+    if (timeStatus === "UPCOMING") return COLORS.info;
+    if (timeStatus === "ENDED") return COLORS.textTertiary;
     switch (event.status) {
       case "APPROVED":
         return COLORS.success;
       case "PENDING":
         return COLORS.warning;
-
       default:
         return COLORS.error;
     }
@@ -84,7 +102,15 @@ export const AppliedEventCard: React.FC<AppliedEventCardProps> = ({
                 { backgroundColor: getStatusColor() },
               ]}
             >
-              <Text style={styles.statusText}>{event.status}</Text>
+              <Text style={styles.statusText}>{
+                timeStatus === "ONGOING"
+                  ? "Ongoing"
+                  : timeStatus === "UPCOMING"
+                  ? "Upcoming"
+                  : timeStatus === "ENDED"
+                  ? "Ended"
+                  : event.status
+              }</Text>
             </View>
           </View>
         </View>

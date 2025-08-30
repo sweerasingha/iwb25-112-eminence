@@ -265,7 +265,7 @@ export default function ManageEvent() {
         children={
           <CreateSponsorship
             handleClose={createSponsorshipDialog.close}
-            eventId={selectedEvent?._id!}
+            eventId={(selectedEvent?._id || selectedEvent?.id) as string}
           />
         }
       />
@@ -285,14 +285,6 @@ export default function ManageEvent() {
                       createEventDialog.open();
                     }}
                     children={"Add Event"}
-                  />,
-                  <StaticButton
-                    key="create-sponsorship"
-                    onClick={() => {
-                      createSponsorshipDialog.open();
-                    }}
-                    children={"Create Sponsorship"}
-                    className="ml-2"
                   />,
                 ]
               : []

@@ -12,9 +12,9 @@ import {
   Image,
 } from "react-native";
 import { router } from "expo-router";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { set, z } from "zod";
-import { RootState } from "../../store";
+import { RootState, AppDispatch } from "../../store";
 import {
   InputField,
   Button,
@@ -23,7 +23,7 @@ import {
 } from "../../components";
 import { globalStyles, COLORS, SPACING } from "../../theme";
 import { eventService } from "../../services/event";
-import { CreateEventRequest, EventLocation } from "../../types";
+import { CreateEventRequest, EventLocation, Event } from "../../types";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as ImagePicker from "expo-image-picker";
@@ -32,6 +32,7 @@ import { useForm } from "../../hooks";
 import { ComboBox } from "components/UI/ComboBox";
 import { cityWithProvince } from "utils/citiesWithProvince";
 import { eventTypes } from "utils/eventTypes";
+import { addEvent } from "../../store/slices/eventsSlice";
 
 const { width } = Dimensions.get("window");
 
@@ -54,6 +55,7 @@ type CreateEventFormData = z.infer<typeof createEventSchema>;
 
 export default function CreateEventScreen() {
   const { tokenUser } = useSelector((state: RootState) => state.auth);
+  const dispatch = useDispatch<AppDispatch>();
   const [loading, setLoading] = useState(false);
   const [location, setLocation] = useState<EventLocation | null>(null);
   const [eventDate, setEventDate] = useState(new Date());
@@ -197,8 +199,12 @@ export default function CreateEventScreen() {
 
       const res = await eventService.createEvent(eventData, imageFile);
       if (res.success === true) {
+        if (res.data) {
+          dispatch(addEvent(res.data as Event));
+        }
         Alert.alert("Success", "Event created successfully!", [
-          { text: "OK", onPress: () => router.push("/profile/manage-events") },
+          { text: "Home", onPress: () => router.push("/") },
+          { text: "My Events", onPress: () => router.push("/profile/manage-events") },
         ]);
       }
     } catch (error: any) {

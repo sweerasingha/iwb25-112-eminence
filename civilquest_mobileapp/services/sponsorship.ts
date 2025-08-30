@@ -7,14 +7,27 @@ class SponsorshipService {
   async createSponsorship(
     sponsorshipData: SponsorshipRequest
   ): Promise<ApiResponse<Sponsorship>> {
-    const response = await api.post<Sponsorship>("/sponsors", {
+    const payload: any = {
       userId: sponsorshipData.userId,
       eventId: sponsorshipData.eventId,
       sponsorType: sponsorshipData.sponsorType,
-      amount: sponsorshipData.donationAmount,
-      donation: sponsorshipData.donation,
       description: sponsorshipData.description,
-    });
+    };
+
+    if (sponsorshipData.sponsorType === "AMOUNT") {
+      if (typeof sponsorshipData.amount === "number") {
+        payload.amount = sponsorshipData.amount;
+      }
+    } else if (sponsorshipData.sponsorType === "DONATION") {
+      if (typeof sponsorshipData.donationAmount === "number") {
+        payload.donationAmount = sponsorshipData.donationAmount;
+      }
+      if (typeof sponsorshipData.donation === "string" && sponsorshipData.donation.trim().length > 0) {
+        payload.donation = sponsorshipData.donation.trim();
+      }
+    }
+
+    const response = await api.post<Sponsorship>("/sponsors", payload);
     return response;
   }
 

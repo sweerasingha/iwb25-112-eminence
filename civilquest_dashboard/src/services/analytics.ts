@@ -9,12 +9,13 @@ export const getEventAnalytics = async (params: AnalyticsDateRange) => {
   if (params.endDate) searchParams.append("endDate", params.endDate);
 
   return await apiService.get(
-    `admin/analytics/events?${searchParams.toString()}`
+    `admin/analytics/events?${searchParams.toString()}`,
+    { headers: { "x-silent-error": "1" } }
   );
 };
 
 export const getUserAnalytics = async () =>
-  await apiService.get("admin/analytics/users");
+  await apiService.get("admin/analytics/users", { headers: { "x-silent-error": "1" } });
 
 export const getSponsorshipAnalytics = async (params: AnalyticsDateRange) => {
   const searchParams = new URLSearchParams();
@@ -23,7 +24,8 @@ export const getSponsorshipAnalytics = async (params: AnalyticsDateRange) => {
   if (params.endDate) searchParams.append("endDate", params.endDate);
 
   return await apiService.get(
-    `admin/analytics/sponsorships?${searchParams.toString()}`
+    `admin/analytics/sponsorships?${searchParams.toString()}`,
+    { headers: { "x-silent-error": "1" } }
   );
 };
 
@@ -34,6 +36,7 @@ export const getParticipationAnalytics = async (params: AnalyticsDateRange) => {
   if (params.endDate) searchParams.append("endDate", params.endDate);
 
   return await apiService.get(
-    `admin/analytics/participation?${searchParams.toString()}`
+    `admin/analytics/participation?${searchParams.toString()}`,
+    { headers: { "x-silent-error": "1" } }
   );
 };
