@@ -142,11 +142,17 @@ export default function HomeScreen() {
                 name="location-outline"
                 size={20}
                 color={COLORS.white}
+                style={{ margin: SPACING.sm }}
               />
               <Text style={styles.statLabel}>Nationwide</Text>
             </View>
             <View style={styles.statItem}>
-              <Ionicons name="people-outline" size={20} color={COLORS.white} />
+              <Ionicons
+                name="people-outline"
+                size={20}
+                color={COLORS.white}
+                style={{ margin: SPACING.sm }}
+              />
               <Text style={styles.statLabel}>Join Community</Text>
             </View>
           </View>

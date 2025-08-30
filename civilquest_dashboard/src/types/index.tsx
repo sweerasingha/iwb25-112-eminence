@@ -138,3 +138,10 @@ export interface Sponsor {
   createdAt: string;
   updatedAt: string;
 }
+
+
+export interface EventLocation {
+  displayName: string;
+  longitude: number;
+  latitude: number;
+}

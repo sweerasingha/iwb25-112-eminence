@@ -25,16 +25,16 @@ function AuthInitializer({ children }: { children: React.ReactNode }) {
 }
 
 export default function RootLayout() {
-  const [showSplash, setShowSplash] = useState(true);
+  const [showSplash, setShowSplash] = useState(false);
 
-  useEffect(() => {
-    // Show splash for 3 seconds
-    const timer = setTimeout(() => {
-      setShowSplash(false);
-    }, 3000);
+  // useEffect(() => {
+  //   // Show splash for 3 seconds
+  //   const timer = setTimeout(() => {
+  //     setShowSplash(false);
+  //   }, 3000);
 
-    return () => clearTimeout(timer);
-  }, []);
+  //   return () => clearTimeout(timer);
+  // }, []);
 
   if (showSplash) {
     return <SplashScreen />;

@@ -31,8 +31,8 @@ export default function ProfileLayout() {
 
   return (
     <Stack>
-      <Stack.Screen name="apply-premium" options={{ title: "Apply Premium" }} />
-      <Stack.Screen name="manage-events" options={{ title: "My Events" }} />
+      <Stack.Screen name="apply-premium" options={{ title: "Apply Premium", headerShown: false }} />
+      <Stack.Screen name="manage-events" options={{ title: "My Events", headerShown: false }} />
       <Stack.Screen
         name="sponsorship-approval"
         options={{ title: "Sponsorship Approval" }}

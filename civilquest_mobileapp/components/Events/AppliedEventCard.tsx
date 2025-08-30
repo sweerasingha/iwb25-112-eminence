@@ -19,12 +19,11 @@ export const AppliedEventCard: React.FC<AppliedEventCardProps> = ({
   const router = useRouter();
   const { event, method, isParticipated, appliedAt } = appliedEvent;
 
-  const handlePress = () => {
-    if (onPress) {
-      onPress();
-    } else {
-      router.push(`/events/details?id=${appliedEvent.eventId}`);
-    }
+  const handleEventPress = (event: Event) => {
+    router.push({
+      pathname: "/events/details",
+      params: { event: JSON.stringify(event) },
+    });
   };
 
   const getStatusColor = () => {
@@ -68,11 +67,7 @@ export const AppliedEventCard: React.FC<AppliedEventCardProps> = ({
   };
 
   return (
-    <TouchableOpacity
-      style={styles.container}
-      onPress={handlePress}
-      activeOpacity={0.8}
-    >
+    <TouchableOpacity style={styles.container} activeOpacity={0.8}>
       <LinearGradient
         colors={[COLORS.surface, COLORS.backgroundSecondary]}
         style={styles.gradient}
