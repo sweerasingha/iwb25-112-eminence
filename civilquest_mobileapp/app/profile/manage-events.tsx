@@ -24,6 +24,7 @@ export default function ManageMyEventsScreen() {
     sponsors,
     loadingSponsors,
     sponsorActions,
+    sponsorActionType,
     participationActions,
     updating,
     handleRefresh,
@@ -99,6 +100,7 @@ export default function ManageMyEventsScreen() {
           event={selectedEvent}
           sponsors={sponsors}
           sponsorActions={sponsorActions}
+          sponsorActionType={sponsorActionType}
           onClose={() => setSponsorsModalVisible(false)}
           onApproveSponsor={handleApproveSponsor}
           onRejectSponsor={handleRejectSponsor}

@@ -18,6 +18,7 @@ interface SponsorsModalProps {
   event: Event | null;
   sponsors: Sponsorship[];
   sponsorActions: { [key: string]: boolean };
+  sponsorActionType?: { [key: string]: "approve" | "reject" | null };
   onClose: () => void;
   onApproveSponsor: (sponsorId: string) => void;
   onRejectSponsor: (sponsorId: string) => void;
@@ -28,6 +29,7 @@ export default function SponsorsModal({
   event,
   sponsors,
   sponsorActions,
+  sponsorActionType,
   onClose,
   onApproveSponsor,
   onRejectSponsor,
@@ -158,7 +160,9 @@ export default function SponsorsModal({
                       />
                       <Text style={styles.sponsorActionButtonText}>
                         {sponsorActions[sponsor.id]
-                          ? "Approving..."
+                          ? sponsorActionType?.[sponsor.id] === "approve"
+                            ? "Approving..."
+                            : "Approve"
                           : "Approve"}
                       </Text>
                     </TouchableOpacity>
@@ -171,7 +175,11 @@ export default function SponsorsModal({
                     >
                       <Ionicons name="close" size={16} color={COLORS.white} />
                       <Text style={styles.sponsorActionButtonText}>
-                        {sponsorActions[sponsor.id] ? "Rejecting..." : "Reject"}
+                        {sponsorActions[sponsor.id]
+                          ? sponsorActionType?.[sponsor.id] === "reject"
+                            ? "Rejecting..."
+                            : "Reject"
+                          : "Reject"}
                       </Text>
                     </TouchableOpacity>
                   </View>

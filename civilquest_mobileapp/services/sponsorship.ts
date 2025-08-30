@@ -39,8 +39,7 @@ class SponsorshipService {
   async getEventSponsorships(
     eventId: string
   ): Promise<ApiResponse<Sponsorship[]>> {
-    const response = await api.get<Sponsorship[]>(`sponsors`);
-    console.log("sssssssssssssssssssssss", response);
+    const response = await api.get<Sponsorship[]>(`/sponsors`, { eventId });
     return response;
   }
 
@@ -66,14 +65,14 @@ class SponsorshipService {
   // Approve sponsorship
 
   async approveSponsor(sponsorId: ID): Promise<ApiResponse<null>> {
-    const response = await api.post(`/sponsors/${sponsorId}/approve`, {});
+    const response = await api.put(`/sponsors/${sponsorId}/approve`, {});
     return response;
   }
 
   // Reject sponsorship
 
   async rejectSponsor(sponsorId: ID): Promise<ApiResponse<null>> {
-    const response = await api.post(`/sponsors/${sponsorId}/reject`, {});
+    const response = await api.put(`/sponsors/${sponsorId}/reject`, {});
     return response;
   }
 }
