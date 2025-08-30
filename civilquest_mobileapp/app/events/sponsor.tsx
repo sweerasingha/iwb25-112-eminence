@@ -50,8 +50,9 @@ export default function SponsorEventScreen() {
   } = useForm<SponsorshipFormData>(
     {
       sponsorType: "AMOUNT",
+      amount: "",
       donationAmount: "",
-      donation: "AMOUNT",
+      donation: "",
       description: "",
     },
     sponsorshipSchema
@@ -120,14 +121,52 @@ export default function SponsorEventScreen() {
 
           {/* Form */}
           <View style={styles.form}>
-            <InputField
-              label="Donation Amount (LKR)"
-              placeholder="Enter amount (e.g., 10000.00)"
-              {...getFieldProps("donationAmount")}
-              error={touched.donationAmount ? errors.donationAmount : undefined}
-              keyboardType="numeric"
+            <SponsorshipDropdown
+              label="Sponsorship Type"
+              value={formData.sponsorType}
+              onSelect={(val) => {
+                handleChange("sponsorType", val);
+                if (val === "AMOUNT") {
+                  handleChange("donationAmount", "");
+                  handleChange("donation", "");
+                } else {
+                  handleChange("amount", "");
+                }
+              }}
+              options={[...getSponsorTypes()]}
+              error={touched.sponsorType ? (errors as any).sponsorType : undefined}
               required
             />
+
+            {formData.sponsorType === "AMOUNT" ? (
+              <InputField
+                label="Amount (LKR)"
+                placeholder="Enter amount (e.g., 10000.00)"
+                {...getFieldProps("amount")}
+                error={touched.amount ? (errors as any).amount : undefined}
+                keyboardType="numeric"
+                required
+              />
+            ) : (
+              <>
+                <InputField
+                  label="Donation Amount (LKR)"
+                  placeholder="Enter donation amount (optional)"
+                  {...getFieldProps("donationAmount")}
+                  error={touched.donationAmount ? (errors as any).donationAmount : undefined}
+                  keyboardType="numeric"
+                />
+                <InputField
+                  label="Donation Details"
+                  placeholder="Describe the donation (optional)"
+                  {...getFieldProps("donation")}
+                  error={touched.donation ? (errors as any).donation : undefined}
+                  multiline
+                  numberOfLines={4}
+                  style={styles.textArea}
+                />
+              </>
+            )}
 
             <InputField
               label="Description"

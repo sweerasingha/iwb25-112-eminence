@@ -22,7 +22,7 @@ const useAnalytics = () => {
         data: response,
       };
     } catch (error) {
-      console.error("Error fetching event analytics:", error);
+      // Silent
       return {
         status: false,
       };
@@ -41,7 +41,7 @@ const useAnalytics = () => {
         data: response,
       };
     } catch (error) {
-      console.error("Error fetching user analytics:", error);
+      // Silent
       return {
         status: false,
       };
@@ -62,7 +62,7 @@ const useAnalytics = () => {
         data: response,
       };
     } catch (error) {
-      console.error("Error fetching sponsorship analytics:", error);
+      // Silent
       return {
         status: false,
       };
@@ -83,7 +83,7 @@ const useAnalytics = () => {
         data: response,
       };
     } catch (error) {
-      console.error("Error fetching participation analytics:", error);
+      // Silent
       return {
         status: false,
       };

@@ -27,7 +27,7 @@ export function useForm<T extends Record<string, any>>(
   };
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     const typedValue = parseValue(name as keyof T, value);

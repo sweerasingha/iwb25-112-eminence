@@ -79,6 +79,7 @@ export interface Event {
   approvedBy: string | null;
   status: EventStatus;
   sponsor: any[];
+  sponsors?: EventSponsor[];
   participant: any[];
   reward: string;
   image_url: string;
@@ -119,19 +120,36 @@ export interface Sponsorship {
   status: SponsorshipStatus;
 }
 
+export interface EventSponsor {
+  _id: ID;
+  id?: ID;
+  userId: string;
+  eventId: ID;
+  sponsorType: string; // "AMOUNT" | "DONATION"
+  amount?: number | null;
+  donationAmount?: number | null;
+  donation?: string | null;
+  description: string;
+  approvedStatus: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface SponsorshipRequest {
   userId: string;
   eventId: string;
-  sponsorType: string;
-  donationAmount: number;
-  donation: string;
+  sponsorType: string; // "AMOUNT" | "DONATION"
+  amount?: number; // for AMOUNT
+  donationAmount?: number; // for DONATION (optional)
+  donation?: string; // for DONATION (optional)
   description: string;
 }
 
 export interface SponsorshipForm {
-  sponsorType: string;
-  donationAmount: string;
-  donation: string;
+  sponsorType: string; // "AMOUNT" | "DONATION"
+  amount?: string;
+  donationAmount?: string;
+  donation?: string;
   description: string;
 }
 

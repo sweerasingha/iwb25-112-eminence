@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, Image, ScrollView, Alert } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { ParticipationButtons, Button, Loading } from "../../components";
 import { globalStyles, COLORS, SPACING, LAYOUT, FONTS } from "../../theme";
-import { Event, Sponsorship } from "types";
+import { Event, EventSponsor } from "types";
 import { eventService } from "../../services/event";
 import { useLocation } from "hooks/useLocation";
 
@@ -14,12 +14,37 @@ export default function EventDetailsScreen() {
   const eventParam = Array.isArray(params.event)
     ? params.event[0]
     : params.event;
-  const event = eventParam ? JSON.parse(eventParam as string) : null;
+  const idParam = Array.isArray(params.id) ? params.id[0] : params.id;
+  const initialEvent = eventParam ? JSON.parse(eventParam as string) : null;
+  const [currentEvent, setCurrentEvent] = useState<Event | null>(initialEvent);
+  const [loadingEvent, setLoadingEvent] = useState<boolean>(false);
   const router = useRouter();
   const { location, getCurrentLocation, errorMsg, isLoading } = useLocation();
   const [processing, setProcessing] = useState(false);
 
-  if (!event) {
+  useEffect(() => {
+    const idToLoad = (currentEvent?.id as string | undefined) || (idParam as string | undefined);
+    if (!idToLoad) return;
+    let cancelled = false;
+    const load = async () => {
+      setLoadingEvent(true);
+      try {
+        const resp = await eventService.getEventById(idToLoad);
+        if (!cancelled && resp.success && resp.data) {
+          setCurrentEvent(resp.data as Event);
+        }
+      } finally {
+        if (!cancelled) setLoadingEvent(false);
+      }
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [idParam]);
+
+  const ev = currentEvent;
+  if (!ev) {
     return (
       <View style={[globalStyles.centerContainer]}>
         <Ionicons name="alert-circle" size={48} color={COLORS.error} />
@@ -46,7 +71,7 @@ export default function EventDetailsScreen() {
       if (errorMsg == null) {
         console.log("location", location);
         const response = await eventService.participateInEvent({
-          eventId: event.id,
+          eventId: ev.id,
           latitude: location?.coords.latitude || 0,
           longitude: location?.coords.longitude || 0,
         });
@@ -63,16 +88,16 @@ export default function EventDetailsScreen() {
     }
   };
 
-  const statusConfig = getStatusConfig(event.status);
+  const statusConfig = getStatusConfig(ev.status);
 
   return (
     <View style={globalStyles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+    <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header Image */}
         <View style={styles.header}>
-          {event.image_url ? (
+      {ev.image_url ? (
             <View style={styles.imageWrapper}>
-              <Image source={{ uri: event.image_url }} style={styles.image} />
+        <Image source={{ uri: ev.image_url }} style={styles.image} />
               <LinearGradient
                 colors={["transparent", "rgba(0,0,0,0.7)"]}
                 style={styles.imageOverlay}
@@ -107,10 +132,10 @@ export default function EventDetailsScreen() {
         {/* Title & Type */}
         <View style={[globalStyles.card, styles.contentCard]}>
           <Text style={[globalStyles.h3, styles.title]}>
-            {event.eventTitle}
+            {ev.eventTitle}
           </Text>
           <Text style={[globalStyles.bodySmall, styles.type]}>
-            {event.eventType}
+            {ev.eventType}
           </Text>
 
           {/* Meta */}
@@ -118,26 +143,26 @@ export default function EventDetailsScreen() {
             <View style={styles.metaItem}>
               <Ionicons name="time" size={16} color={COLORS.textTertiary} />
               <Text style={[globalStyles.caption, styles.metaText]}>
-                {formatDate(event.date, event.startTime)} — {event.endTime}
+                {formatDate(ev.date, ev.startTime)} — {ev.endTime}
               </Text>
             </View>
             <View style={styles.metaItem}>
               <Ionicons name="location" size={16} color={COLORS.textTertiary} />
               <Text style={[globalStyles.caption, styles.metaText]}>
-                {event.location}, {event.city}
+                {ev.location}, {ev.city}
               </Text>
             </View>
           </View>
 
           {/* Participation quick status */}
-          {event.userApplicationStatus?.hasApplied && (
+          {ev.userApplicationStatus?.hasApplied && (
             <View style={styles.participationRow}>
               <View
                 style={[
                   styles.participationBadge,
                   {
                     backgroundColor:
-                      event.userApplicationStatus.method === "WILL_JOIN"
+                      ev.userApplicationStatus.method === "WILL_JOIN"
                         ? COLORS.success
                         : COLORS.info,
                   },
@@ -145,7 +170,7 @@ export default function EventDetailsScreen() {
               >
                 <Ionicons
                   name={
-                    event.userApplicationStatus.method === "WILL_JOIN"
+                    ev.userApplicationStatus.method === "WILL_JOIN"
                       ? "checkmark"
                       : "heart"
                   }
@@ -153,12 +178,12 @@ export default function EventDetailsScreen() {
                   color={COLORS.white}
                 />
                 <Text style={styles.participationText}>
-                  {event.userApplicationStatus.method === "WILL_JOIN"
-                    ? "Joining"
+                  {ev.userApplicationStatus.method === "WILL_JOIN"
+                    ? "Will Join"
                     : "Interested"}
                 </Text>
               </View>
-              {event.userApplicationStatus.isParticipated && (
+              {ev.userApplicationStatus.isParticipated && (
                 <View
                   style={[
                     styles.participationBadge,
@@ -179,7 +204,7 @@ export default function EventDetailsScreen() {
             About this event
           </Text>
           <Text style={[globalStyles.body, styles.description]}>
-            {event.eventDescription}
+            {ev.eventDescription}
           </Text>
         </View>
 
@@ -189,44 +214,44 @@ export default function EventDetailsScreen() {
             <View style={styles.statItem}>
               <Ionicons name="people" size={18} color={COLORS.primary} />
               <Text style={globalStyles.bodySmall}>
-                {event.participantCount || event.participant?.length || 0}{" "}
+                {ev.participantCount || ev.participant?.length || 0}{" "}
                 participants
               </Text>
             </View>
-            {event.sponsor?.length > 0 && (
+            {(ev.sponsors?.length ?? 0) > 0 || (ev.sponsor?.length ?? 0) > 0 ? (
               <View style={styles.statItem}>
                 <Ionicons name="diamond" size={18} color={COLORS.secondary} />
                 <Text style={globalStyles.bodySmall}>
-                  {event.sponsor.length} sponsors
+                  {(ev.sponsors?.length ?? ev.sponsor?.length) || 0} sponsors
                 </Text>
               </View>
-            )}
-            {!!event.reward && (
+    ) : null}
+            {!!ev.reward && (
               <View style={styles.statItem}>
                 <Ionicons name="trophy" size={18} color={COLORS.warning} />
-                <Text style={globalStyles.bodySmall}>{event.reward}</Text>
+                <Text style={globalStyles.bodySmall}>{ev.reward}</Text>
               </View>
             )}
           </View>
         </View>
 
         {/* Actions */}
-        {event.status === "APPROVED" &&
-          (!canParticipate(event) ? (
+        {ev.status === "APPROVED" &&
+          (!canParticipate(ev) ? (
             <View style={[globalStyles.card, styles.section]}>
               <Text style={[globalStyles.h5, styles.sectionTitle]}>
                 Participate
               </Text>
               <ParticipationButtons
-                event={event}
-                initialMethod={event.userApplicationStatus?.method || null}
+                event={ev}
+                initialMethod={ev.userApplicationStatus?.method || null}
               />
               <Button
                 title="Sponsor this Event"
                 variant="secondary"
                 fullWidth
                 onPress={() =>
-                  router.push(`/events/sponsor?eventId=${event.id}`)
+                  router.push(`/events/sponsor?eventId=${ev.id}`)
                 }
                 style={{ marginTop: SPACING.md }}
                 leftIcon={
@@ -258,19 +283,30 @@ export default function EventDetailsScreen() {
             </View>
           ))}
 
-        {/* show sponsors  */}
+        {/* Sponsors */}
         <View style={[globalStyles.card, styles.section]}>
           <Text style={[globalStyles.h5, styles.sectionTitle]}>Sponsors</Text>
-          {event.sponsor?.length > 0 ? (
-            event.sponsor.map((sponsor: Sponsorship) => (
-              <Text key={sponsor.id} style={globalStyles.bodySmall}>
-                {sponsor.description}
-              </Text>
-            ))
+          {(ev.sponsors?.length ?? 0) > 0 ? (
+            <View style={{ gap: SPACING.sm }}>
+              {ev.sponsors!.map((s: EventSponsor) => (
+                <View key={s._id} style={{ rowGap: 2 }}>
+                  <Text style={[globalStyles.bodySmall, { fontWeight: "600" }]}>
+                    {s.sponsorType === "AMOUNT"
+                      ? `LKR ${s.amount ?? 0}`
+                      : s.donationAmount
+                      ? `Donation LKR ${s.donationAmount}`
+                      : "Donation"}
+                  </Text>
+                  {!!s.description && (
+                    <Text style={[globalStyles.caption, { color: COLORS.textSecondary }]}>
+                      {s.description}
+                    </Text>
+                  )}
+                </View>
+              ))}
+            </View>
           ) : (
-            <Text style={globalStyles.bodySmall}>
-              No sponsors for this event
-            </Text>
+            <Text style={globalStyles.bodySmall}>No sponsors for this event</Text>
           )}
         </View>
 
@@ -284,11 +320,11 @@ export default function EventDetailsScreen() {
           ]}
         >
           <Text style={globalStyles.caption}>Created by</Text>
-          <Text style={globalStyles.bodySmall}>{event.createdBy}</Text>
+          <Text style={globalStyles.bodySmall}>{ev.createdBy}</Text>
           <Text style={[globalStyles.caption, { marginTop: SPACING.sm }]}>
             Status
           </Text>
-          <Text style={globalStyles.bodySmall}>{event.status}</Text>
+          <Text style={globalStyles.bodySmall}>{ev.status}</Text>
         </View>
 
         <View style={{ height: SPACING.huge }} />

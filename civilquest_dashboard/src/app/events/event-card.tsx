@@ -32,26 +32,26 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
         </h2>
         <p className="text-gray-600 mb-4">{event.eventDescription}</p>
 
-        <div className="grid grid-cols-2 gap-4 text-sm text-gray-700 mb-6">
-          <div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 text-sm text-gray-700 mb-6">
+          <div className="min-w-0">
             <p className="font-semibold"> Date</p>
-            <p>{event.date}</p>
+            <p className="break-words whitespace-normal leading-5">{event.date}</p>
           </div>
-          <div>
+          <div className="min-w-0">
             <p className="font-semibold">Time</p>
-            <p>
+            <p className="break-words whitespace-normal leading-5">
               {event.startTime} - {event.endTime}
             </p>
           </div>
-          <div>
+          <div className="min-w-0">
             <p className="font-semibold">Location</p>
-            <p>
+            <p className="break-words whitespace-normal leading-5">
               {event.location}, {event.city}
             </p>
           </div>
-          <div>
+          <div className="min-w-0">
             <p className="font-semibold">Reward</p>
-            <p>{event.reward}</p>
+            <p className="break-words whitespace-normal leading-5">{event.reward}</p>
           </div>
         </div>
 

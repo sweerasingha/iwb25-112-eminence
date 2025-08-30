@@ -2,22 +2,31 @@ import { useState } from "react";
 import * as sponsorervice from "../services/sponsors";
 import { toast } from "react-toastify";
 import { Sponsor } from "@/types";
-import { data } from "framer-motion/client";
 
 const useSponsors = () => {
   const [loading, setLoading] = useState(false);
   const [sponsors, setSponsor] = useState<Sponsor[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchSponsors = async () => {
     setLoading(true);
     try {
       const response = await sponsorervice.getSponsor();
-      setSponsor((response as any) || []);
-      return { data: response.data, error: null };
-    } catch (error) {
-      console.error("Error fetching sponsor :", error);
+      const list: Sponsor[] = Array.isArray(response) ? [...response] : Array.isArray((response as any)?.data) ? [...(response as any).data] : [];
+      list.sort((a: any, b: any) => {
+        const aTime = new Date(a?.createdAt || a?.updatedAt || 0).getTime();
+        const bTime = new Date(b?.createdAt || b?.updatedAt || 0).getTime();
+        return bTime - aTime;
+      });
+      setSponsor(list);
+      setError(null);
+      return { data: list, error: null };
+    } catch (err: any) {
+      console.error("Error fetching sponsor :", err);
       setSponsor([]);
-      return { data: null, error };
+      const msg = err?.message || "Failed to load sponsors";
+      setError(msg);
+      return { data: null, error: msg };
     } finally {
       setLoading(false);
     }
@@ -26,8 +35,10 @@ const useSponsors = () => {
   const createSponsorship = async (data: {
     adminOperatorId: string;
     eventId: string;
-    sponsorType: string;
-    amount: number;
+    sponsorType: "AMOUNT" | "DONATION" | string;
+    amount?: number;
+    donationAmount?: number;
+    donation?: string;
     description: string;
   }) => {
     setLoading(true);
@@ -38,10 +49,11 @@ const useSponsors = () => {
       return { success: true, error: null };
     } catch (error: any) {
       const errorMessage =
-        error.response?.data?.errors[0] ||
+        error.response?.data?.errors?.[0] ||
+        error.response?.data?.error ||
         error.message ||
         "Error creating sponsorship";
-      return { success: false, error };
+      return { success: false, error: errorMessage };
     } finally {
       setLoading(false);
     }
@@ -56,10 +68,11 @@ const useSponsors = () => {
       return { success: true, error: null };
     } catch (error: any) {
       const errorMessage =
-        error.response?.data?.errors[0] ||
+        error.response?.data?.errors?.[0] ||
+        error.response?.data?.error ||
         error.message ||
-        "Error approving sponsor ";
-      return { success: false, error };
+        "Error approving sponsor";
+      return { success: false, error: errorMessage };
     } finally {
       setLoading(false);
     }
@@ -74,10 +87,11 @@ const useSponsors = () => {
       return { success: true, error: null };
     } catch (error: any) {
       const errorMessage =
-        error.response?.data?.errors[0] ||
+        error.response?.data?.errors?.[0] ||
+        error.response?.data?.error ||
         error.message ||
-        "Error rejecting sponsor ";
-      return { success: false, error };
+        "Error rejecting sponsor";
+      return { success: false, error: errorMessage };
     } finally {
       setLoading(false);
     }
@@ -86,6 +100,7 @@ const useSponsors = () => {
   return {
     loading,
     sponsors,
+    error,
     fetchSponsors,
     createSponsorship,
     approveSponsor,

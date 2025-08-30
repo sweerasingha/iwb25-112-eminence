@@ -181,12 +181,11 @@ export const EventCard: React.FC<EventCardProps> = ({
                 {event.participantCount || event.participant.length}
               </Text>
             </View>
-
-            {event.sponsor.length > 0 && (
+                {(event.sponsors?.length ?? event.sponsor.length) > 0 && (
               <View style={styles.statItem}>
                 <Ionicons name="diamond" size={16} color={COLORS.secondary} />
                 <Text style={[globalStyles.caption, styles.statText]}>
-                  {event.sponsor.length}
+                  {event.sponsors?.length ?? event.sponsor.length}
                 </Text>
               </View>
             )}
@@ -312,9 +311,9 @@ export const EventCard: React.FC<EventCardProps> = ({
             <Text style={[globalStyles.caption, styles.statText]}>
               👥 {event.participantCount || event.participant.length}
             </Text>
-            {event.sponsor.length > 0 && (
+              {(event.sponsors?.length ?? event.sponsor.length) > 0 && (
               <Text style={[globalStyles.caption, styles.statText]}>
-                {event.sponsor.length}
+              {event.sponsors?.length ?? event.sponsor.length}
               </Text>
             )}
           </View>

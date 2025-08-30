@@ -140,7 +140,7 @@ export default function HomeScreen() {
             <View style={styles.statItem}>
               <Ionicons
                 name="location-outline"
-                size={20}
+                size={21}
                 color={COLORS.white}
                 style={{ margin: SPACING.sm }}
               />
@@ -149,7 +149,7 @@ export default function HomeScreen() {
             <View style={styles.statItem}>
               <Ionicons
                 name="people-outline"
-                size={20}
+                size={21}
                 color={COLORS.white}
                 style={{ margin: SPACING.sm }}
               />
