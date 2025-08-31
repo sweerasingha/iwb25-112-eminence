@@ -23,6 +23,24 @@ public isolated function validateString(string name, string label, int? minLengt
     return true;
 }
 
+public isolated function validateTextWithPunctuation(string text, string label, int? minLength = 0, int? maxLength = 0) returns string|boolean {
+    // Allow letters, digits, whitespace, and common punctuation: . , ; : ! ? ' " ( ) - _ / & @ # % +
+    string:RegExp pattern = re `^[a-zA-Z0-9\s\.,;:!\?'"()\-_/&@#%\+]*$`;
+
+    if text.length() == 0 || regexp:isFullMatch(pattern, text) == false {
+        return label + ": contains invalid characters (allowed: letters, numbers, spaces, and . , ; : ! ? ' \" ( ) - _ / & @ # % +)";
+    }
+
+    if minLength is int && text.length() < minLength {
+        return label + ": should have at least " + minLength.toString() + " characters";
+    }
+    if maxLength is int && text.length() > maxLength {
+        return label + ": should not exceed " + maxLength.toString() + " characters";
+    }
+
+    return true;
+}
+
 public isolated function validatePhoneNumber(string phoneNumber) returns string|boolean {
     string:RegExp phonePattern = re `^[0-9]{10}$`;
     if regexp:isFullMatch(phonePattern, phoneNumber) == false {
@@ -212,7 +230,8 @@ public isolated function validateEventCreation(map<json> eventData) returns stri
 
     if eventData.hasKey("eventTitle") {
         string title = eventData["eventTitle"].toString();
-        string|boolean titleResult = validateString(title, "Event title", 5, 200, true);
+        // Allow punctuation in title as well
+        string|boolean titleResult = validateTextWithPunctuation(title, "Event title", 5, 200);
         if titleResult is string {
             errors.push(titleResult);
         }
@@ -220,7 +239,8 @@ public isolated function validateEventCreation(map<json> eventData) returns stri
 
     if eventData.hasKey("eventDescription") {
         string description = eventData["eventDescription"].toString();
-        string|boolean descResult = validateString(description, "Event description", 20, 2000, true);
+        // Allow punctuation in descriptions while enforcing length
+        string|boolean descResult = validateTextWithPunctuation(description, "Event description", 20, 2000);
         if descResult is string {
             errors.push(descResult);
         }

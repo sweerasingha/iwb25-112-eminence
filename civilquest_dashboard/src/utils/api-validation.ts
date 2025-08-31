@@ -3,25 +3,25 @@ export const isAlphanumericOnly = (value: string): boolean => {
   return /^[a-zA-Z0-9]+$/.test(value);
 };
 
+export const isSafeText = (value: string): boolean => {
+  return /^[a-zA-Z0-9\s\.,;:!\?'"()\-_/&@#%\+]*$/.test(value);
+};
+
 export const validateApiRequirements = (formData: any) => {
   console.log("=== API REQUIREMENTS VALIDATION ===");
 
-  const alphanumericFields = [
-    "eventDescription",
-    "eventTitle",
-    "location",
-    "reward",
-  ];
-
   let allValid = true;
 
-  alphanumericFields.forEach((field) => {
+  ["eventDescription", "eventTitle", "location"].forEach((field) => {
     const value = formData[field];
-    const isValid = value && isAlphanumericOnly(value.toString());
-    if (!isValid) {
-      allValid = false;
-    }
+    const ok = value && isSafeText(value.toString());
+    if (!ok) allValid = false;
   });
+
+  const rewardVal = formData["reward"];
+  if (!rewardVal || !/^[0-9]+$/.test(String(rewardVal))) {
+    allValid = false;
+  }
 
   const generalFields = [
     "date",

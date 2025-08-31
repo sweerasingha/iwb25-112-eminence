@@ -114,3 +114,19 @@ function testValidateEventCreationComposite() {
     string[] noErrors = validateEventCreation(goodEvent);
     test:assertEquals(noErrors.length(), 0, msg = "Valid event should have no validation errors");
 }
+
+@test:Config {}
+function testValidateEventDescriptionWithPunctuation() {
+    string futureDate = "2099-12-31";
+    map<json> ev = {
+        "eventTitle": "Beach Cleanup: Phase #2 (Colombo)",
+        "eventDescription": "Bring gloves, bags & friends! Meeting point: Gate A, 9:00 AM. Let's do this.",
+        "date": futureDate,
+        "startTime": "09:00",
+        "endTime": "10:00",
+        "city": "Colombo",
+        "reward": "50"
+    };
+    string[] errs = validateEventCreation(ev);
+    test:assertEquals(errs.length(), 0, msg = "Description with punctuation should be accepted");
+}
