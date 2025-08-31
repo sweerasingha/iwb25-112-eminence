@@ -12,12 +12,6 @@ export const useLocation = () => {
 
   const getCurrentLocation = async () => {
     setIsLoading(true);
-    if (Platform.OS === "android" && !Device.isDevice) {
-      setErrorMsg(
-        "Oops, this will not work on Snack in an Android Emulator. Try it on your device!"
-      );
-      return;
-    }
 
     let { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== "granted") {
