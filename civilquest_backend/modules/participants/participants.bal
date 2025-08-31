@@ -102,7 +102,7 @@ public function participateInEvent(http:Caller caller, http:Request req, string 
         return utils:badRequest(caller, "Event location coordinates not available");
     }
     float distance = utils:calculateHaversineDistanceMeters(<float>event.latitude, <float>event.longitude, <float>userLat, <float>userLon);
-    if distance > 500.0 {
+    if distance > 1000.0 {
         return utils:forbidden(caller, "You must be within 500 meters of the event location to participate");
     }
 

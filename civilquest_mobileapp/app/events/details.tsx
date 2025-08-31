@@ -21,7 +21,7 @@ export default function EventDetailsScreen() {
   const router = useRouter();
   const { location, getCurrentLocation, errorMsg, isLoading } = useLocation();
   const [processing, setProcessing] = useState(false);
-
+  
   useEffect(() => {
     const idToLoad =
       (currentEvent?.id as string | undefined) ||
@@ -69,8 +69,7 @@ export default function EventDetailsScreen() {
   const participateEvent = async () => {
     setProcessing(true);
     try {
-      const { location: freshLocation, errorMsg: freshError } =
-        await getCurrentLocation();
+      const { location: freshLocation, errorMsg: freshError } = await getCurrentLocation();
       console.log("Current Location:", freshLocation);
       if (freshError == null && freshLocation) {
         const response = await eventService.participateInEvent({
@@ -80,6 +79,15 @@ export default function EventDetailsScreen() {
         });
         if (response.success) {
           Alert.alert("Success", "Successfully participated in event");
+          // Refresh event data to update UI
+          try {
+            const updated = await eventService.getEventById(ev.id);
+            if (updated.success && updated.data) {
+              setCurrentEvent(updated.data as Event);
+            }
+          } catch (e) {
+            // Optionally handle error
+          }
         }
       } else {
         Alert.alert("Location Error", freshError || "Could not get location");
@@ -147,7 +155,7 @@ export default function EventDetailsScreen() {
             <View style={styles.metaItem}>
               <Ionicons name="time" size={16} color={COLORS.textTertiary} />
               <Text style={[globalStyles.caption, styles.metaText]}>
-                {formatDate(ev.date, ev.startTime)} — {ev.endTime}
+                {ev.date} - {ev.startTime} to {ev.endTime}
               </Text>
             </View>
             <View style={styles.metaItem}>
@@ -387,14 +395,6 @@ const getStatusConfig = (status: string) => {
         icon: "help-circle",
         text: status,
       } as const;
-  }
-};
-
-const formatDate = (date: string, startTime: string) => {
-  try {
-    return new Date(`${date}T${startTime}`).toLocaleString();
-  } catch {
-    return `${date} ${startTime}`;
   }
 };
 

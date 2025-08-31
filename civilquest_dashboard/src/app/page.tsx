@@ -174,9 +174,9 @@ export default function Home() {
       )}
 
       {/* Stats Cards */}
-      <div className="mb-8">
+      {/* <div className="mb-8">
         <StatsOverview stats={statCards} loading={analyticsLoading} />
-      </div>
+      </div> */}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Quick Actions */}
