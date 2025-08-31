@@ -164,14 +164,22 @@ isolated function sqrtApprox(float v) returns float {
 
 // Calculate approximate great-circle distance between two coordinates in meters using equirectangular approximation
 public isolated function calculateHaversineDistanceMeters(float lat1, float lon1, float lat2, float lon2) returns float {
+    // Convert degrees to radians
     float φ1 = toRadians(lat1);
     float φ2 = toRadians(lat2);
     float Δφ = toRadians(lat2 - lat1);
     float Δλ = toRadians(lon2 - lon1);
-    float φm = (φ1 + φ2) / 2.0;
-    float x = Δλ * cosApprox(φm);
-    float y = Δφ;
+
+    // Haversine formula
+    float sinDφ2 = float:sin(Δφ / 2.0);
+    float sinDλ2 = float:sin(Δλ / 2.0);
+    float a = sinDφ2 * sinDφ2 + float:cos(φ1) * float:cos(φ2) * sinDλ2 * sinDλ2;
+    float sqrtA = float:sqrt(a);
+    if sqrtA > 1.0 {
+        sqrtA = 1.0;
+    }
+    float c = 2.0 * float:asin(sqrtA);
     float R = 6371000.0; // meters
-    return R * sqrtApprox(x * x + y * y);
+    return R * c;
 }
 
