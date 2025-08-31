@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { InputField } from "@/components/ui/input";
 import { EventLocation } from "@/types";
 
@@ -25,21 +25,17 @@ export default function GetSelectedLocation({
   const [selectedLocation, setSelectedLocation] =
     useState<LocationResult | null>(null);
   const [error, setError] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  useEffect(() => {
-    if (query.trim().length === 0) {
+  const fetchSuggestions = useCallback(async (text: string) => {
+    if (!text.trim()) {
       setResults([]);
       return;
     }
 
-    const delayDebounce = setTimeout(() => {
-      fetchSuggestions(query);
-    }, 500);
+    setIsLoading(true);
+    setError("");
 
-    return () => clearTimeout(delayDebounce);
-  }, [query]);
-
-  const fetchSuggestions = async (text: string) => {
     try {
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
@@ -47,19 +43,34 @@ export default function GetSelectedLocation({
         )}&format=json&addressdetails=1&limit=5`,
         {
           headers: {
-            "User-Agent": "next-location-app/1.0 (email@example.com)",
+            "User-Agent": "civlquest/1.0 (civilquest@email.com)",
           },
         }
       );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const data: LocationResult[] = await response.json();
       setResults(data);
       setError(data.length === 0 ? "No results found" : "");
     } catch (err) {
-      console.error(err);
-      setError("Error fetching location");
+      console.error("Error fetching location:", err);
+      setError("Error fetching location suggestions");
       setResults([]);
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      fetchSuggestions(query);
+    }, 500);
+
+    return () => clearTimeout(delayDebounce);
+  }, [query, fetchSuggestions]);
 
   const handleSelect = (location: LocationResult) => {
     setSelectedLocation(location);
@@ -70,6 +81,15 @@ export default function GetSelectedLocation({
     });
     setQuery(location.display_name);
     setResults([]);
+    setError("");
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setQuery(value);
+    if (selectedLocation && value !== selectedLocation.display_name) {
+      setSelectedLocation(null);
+    }
   };
 
   return (
@@ -78,26 +98,29 @@ export default function GetSelectedLocation({
         name="location"
         label={selectedLocation ? "Change Location" : "Select Location"}
         value={query}
-        onChange={(e) => setQuery(e.target.value)}
+        onChange={handleInputChange}
         error={validationError || error}
       />
 
+      {isLoading && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-3">
+          <p className="text-gray-500">Loading...</p>
+        </div>
+      )}
+
       {/* Dropdown results */}
-      {results.length > 0 && (
+      {results.length > 0 && !selectedLocation && !isLoading && (
         <div className="absolute top-full left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-          {results.map(
-            (item) =>
-              item.display_name !== query && (
-                <button
-                  key={item.place_id}
-                  type="button"
-                  className="w-full text-left px-3 py-2 hover:bg-gray-100"
-                  onClick={() => handleSelect(item)}
-                >
-                  {item.display_name}
-                </button>
-              )
-          )}
+          {results.map((item) => (
+            <button
+              key={item.place_id}
+              type="button"
+              className="w-full text-left px-3 py-2 hover:bg-gray-100"
+              onClick={() => handleSelect(item)}
+            >
+              {item.display_name}
+            </button>
+          ))}
         </div>
       )}
 

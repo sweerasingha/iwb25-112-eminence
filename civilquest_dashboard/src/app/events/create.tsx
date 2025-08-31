@@ -89,12 +89,6 @@ const Create = ({ useEventHook, handleClose }: CreateProps) => {
 
   const handleSubmit = async () => {
     let result: ApiResponse;
-    setFormData((prev: any) => ({
-      ...prev,
-      location: getSelectedLocation?.displayName || "",
-      latitude: getSelectedLocation?.latitude || "",
-      longitude: getSelectedLocation?.longitude || "",
-    }));
 
     if (validate()) {
       try {
@@ -122,6 +116,8 @@ const Create = ({ useEventHook, handleClose }: CreateProps) => {
       setSelectedFile(file);
     }
   };
+
+  console.log("Selected location:", getSelectedLocation);
 
   return (
     <div className="flex flex-col space-y-4">
@@ -168,8 +164,13 @@ const Create = ({ useEventHook, handleClose }: CreateProps) => {
 
       <GetSelectedLocation
         validationError={errors.location}
-        setLocation={function (location: EventLocation): void {
-          setGetSelectedLocation(location);
+        setLocation={(location: EventLocation) => {
+          setFormData((prev: any) => ({
+            ...prev,
+            location: location.displayName,
+            latitude: location.latitude,
+            longitude: location.longitude,
+          }));
         }}
       />
 

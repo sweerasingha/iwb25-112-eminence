@@ -56,14 +56,14 @@ export const createApiCompliantFormData = (
   data.append("date", formData.date);
   data.append("startTime", formData.startTime);
   data.append("endTime", formData.endTime);
-  data.append("location", sanitizeForApi(formData.location));
+  data.append("location", formData.location);
   data.append("city", formData.city);
   if (formData.province) data.append("province", formData.province);
   if (formData.latitude) data.append("latitude", formData.latitude);
   if (formData.longitude) data.append("longitude", formData.longitude);
-  data.append("eventTitle", sanitizeForApi(formData.eventTitle));
+  data.append("eventTitle", formData.eventTitle);
   data.append("eventType", formData.eventType);
-  data.append("eventDescription", sanitizeForApi(formData.eventDescription));
+  data.append("eventDescription", formData.eventDescription);
   data.append("reward", sanitizeForApi(formData.reward));
 
   if (file) {

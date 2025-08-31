@@ -30,7 +30,9 @@ export default function ManageEvent() {
 
   const role = user?.role;
   const canManage =
-    role === Roles.ADMIN || role === Roles.ADMIN_OPERATOR || role === Roles.SUPER_ADMIN;
+    role === Roles.ADMIN ||
+    role === Roles.ADMIN_OPERATOR ||
+    role === Roles.SUPER_ADMIN;
 
   useEffect(() => {
     useEventHook.fetchEvents();
@@ -47,7 +49,9 @@ export default function ManageEvent() {
       accessorKey: "eventTitle",
       header: "Event Title",
       cell: ({ row }) => (
-        <div className="font-medium text-gray-900">{row.original.eventTitle}</div>
+        <div className="font-medium text-gray-900">
+          {row.original.eventTitle}
+        </div>
       ),
       size: 100,
     },
@@ -86,7 +90,9 @@ export default function ManageEvent() {
         };
         const cls = styles[s] || "bg-gray-50 text-gray-700 ring-gray-500/20";
         return (
-          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ring-inset ${cls}`}>
+          <span
+            className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ring-inset ${cls}`}
+          >
             {s}
           </span>
         );
@@ -108,17 +114,21 @@ export default function ManageEvent() {
           />
           {canManage && (
             <>
-        <StaticButton
+              <StaticButton
                 onClick={function (): void {
-          setSelectedEvent(row.original);
+                  setSelectedEvent(row.original);
                   ManageEventDialog.open();
                 }}
                 children={"Edit"}
-                disabled={row.original.status === "ENDED"}
+                disabled={
+                  row.original.status === "APPROVED" ||
+                  row.original.status === "REJECTED" ||
+                  row.original.status === "ENDED"
+                }
               />
-        <StaticButton
+              <StaticButton
                 onClick={function (): void {
-          setSelectedEvent(row.original);
+                  setSelectedEvent(row.original);
                   approveEventDialog.open();
                 }}
                 children={"Approve"}
@@ -128,9 +138,9 @@ export default function ManageEvent() {
                   row.original.status === "ENDED"
                 }
               />
-        <StaticButton
+              <StaticButton
                 onClick={function (): void {
-          setSelectedEvent(row.original);
+                  setSelectedEvent(row.original);
                   rejectEventDialog.open();
                 }}
                 children={"Reject"}
@@ -140,18 +150,18 @@ export default function ManageEvent() {
                   row.original.status === "ENDED"
                 }
               />
-        <StaticButton
+              <StaticButton
                 onClick={function (): void {
-          setSelectedEvent(row.original);
+                  setSelectedEvent(row.original);
                   deleteDialog.open();
                 }}
                 children={"Delete"}
                 className="flex cursor-pointer items-center justify-center gap-2 my-2 px-4 py-2 rounded-md text-white font-medium transition
         bg-red-500 hover:bg-red-600 disabled:opacity-60 disabled:cursor-not-allowed"
               />
-        <StaticButton
+              <StaticButton
                 onClick={function (): void {
-          setSelectedEvent(row.original);
+                  setSelectedEvent(row.original);
                   endEventDialog.open();
                 }}
                 children={"End"}

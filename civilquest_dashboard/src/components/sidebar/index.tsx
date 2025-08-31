@@ -56,7 +56,7 @@ const SideBar = () => {
       name: "Sponsors",
       href: "/sponsors",
       icon: <FaFileInvoice />,
-      allowableRoles: [Roles.ADMIN, Roles.ADMIN_OPERATOR, Roles.SUPER_ADMIN],
+      allowableRoles: [Roles.ADMIN, Roles.ADMIN_OPERATOR],
     },
     {
       name: "User Management",
@@ -74,7 +74,7 @@ const SideBar = () => {
       name: "Points Management",
       href: "/points-management",
       icon: <FaCog />,
-      allowableRoles: [Roles.ADMIN, Roles.ADMIN_OPERATOR],
+      allowableRoles: [Roles.ADMIN, Roles.ADMIN_OPERATOR, Roles.SUPER_ADMIN],
     },
     {
       name: "Analytics",

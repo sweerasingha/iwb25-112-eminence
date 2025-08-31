@@ -30,7 +30,6 @@ const editEvent = z.object({
   date: z.string().min(1, "Event date is required"),
   startTime: z.string().min(1, "Start time is required"),
   endTime: z.string().min(1, "End time is required"),
-  location: z.string().min(1, "Location is required"),
   eventTitle: z.string().min(1, "Event title is required"),
   eventDescription: z.string().min(1, "Event description is required"),
   reward: z.string().min(1, "Reward is required"),
@@ -47,7 +46,6 @@ const AddEdit = ({
       date: selectedEvent?.date || "",
       startTime: selectedEvent?.startTime || "",
       endTime: selectedEvent?.endTime || "",
-  location: selectedEvent?.location || "",
       eventTitle: selectedEvent?.eventTitle || "",
       eventDescription: selectedEvent?.eventDescription || "",
       reward: selectedEvent?.reward || "",
@@ -56,7 +54,9 @@ const AddEdit = ({
   );
 
   useEffect(() => {
-    getProvinces().then(setProvinceMap).catch(() => setProvinceMap({}));
+    getProvinces()
+      .then(setProvinceMap)
+      .catch(() => setProvinceMap({}));
   }, []);
   const provinceOptions = [] as any[];
   const cityOptions = [] as any[];
@@ -66,11 +66,10 @@ const AddEdit = ({
     if (validate()) {
       if (selectedEvent) {
         const updatedEvent: any = {
-          eventId: (selectedEvent._id || selectedEvent.id),
+          eventId: selectedEvent._id || selectedEvent.id,
           date: formData.date,
           startTime: formData.startTime,
           endTime: formData.endTime,
-          location: formData.location,
           eventTitle: formData.eventTitle,
           eventDescription: formData.eventDescription,
           reward: formData.reward,
@@ -88,7 +87,9 @@ const AddEdit = ({
   return (
     <div className="flex flex-col space-y-4">
       {selectedEvent?.status === "APPROVED" && (
-        <div className="text-red-600 text-sm">Approved events cannot be edited.</div>
+        <div className="text-red-600 text-sm">
+          Approved events cannot be edited.
+        </div>
       )}
       <InputField
         name={"date"}
@@ -114,13 +115,7 @@ const AddEdit = ({
         error={errors.endTime}
         type="time"
       />
-      <InputField
-        name={"location"}
-        label={"Location"}
-        value={formData.location}
-        onChange={handleChange}
-        error={errors.location}
-      />
+
       <InputField
         name={"eventTitle"}
         label={"Event Title"}
