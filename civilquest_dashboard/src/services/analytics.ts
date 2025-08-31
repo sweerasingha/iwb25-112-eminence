@@ -1,7 +1,6 @@
 import apiService from "./api-service";
 import { AnalyticsDateRange } from "@/types";
 
-
 export const getEventAnalytics = async (params: AnalyticsDateRange) => {
   const searchParams = new URLSearchParams();
 
@@ -15,7 +14,9 @@ export const getEventAnalytics = async (params: AnalyticsDateRange) => {
 };
 
 export const getUserAnalytics = async () =>
-  await apiService.get("admin/analytics/users", { headers: { "x-silent-error": "1" } });
+  await apiService.get("admin/analytics/users", {
+    headers: { "x-silent-error": "1" },
+  });
 
 export const getSponsorshipAnalytics = async (params: AnalyticsDateRange) => {
   const searchParams = new URLSearchParams();
