@@ -102,6 +102,13 @@ Notes:
 - Dev keys exist in `civilquest_backend/keys/`; replace for production.
 - On first run, a SUPER_ADMIN is ensured by bootstrap (see logs for details).
 
+## Initial Setup
+
+The application automatically creates a SUPER_ADMIN account on first startup:
+
+- **Email**: `superadmin@civilquest.com`
+- **Password**: `SuperAdmin123!`
+
 ### 2) Admin Dashboard (Next.js)
 - Requirements: Node.js LTS.
 - Configure API URL and run dev server:

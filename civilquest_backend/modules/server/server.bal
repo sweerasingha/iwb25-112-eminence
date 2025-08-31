@@ -359,21 +359,21 @@ service /api on httpListener {
     // Get points configuration (admin only)
     resource function get admin/points/config(http:Caller caller, http:Request req) returns error? {
         check middleware:tokenValidation(caller, req);
-        check middleware:assertAnyRole(caller, req, ["ADMIN", "ADMIN_OPERATOR"]);
+        check middleware:assertAnyRole(caller, req, ["ADMIN", "ADMIN_OPERATOR", "SUPER_ADMIN"]);
         check points:getPointsConfig(caller, req);
     }
 
     // Update points configuration (admin only)
     resource function put admin/points/config(http:Caller caller, http:Request req) returns error? {
         check middleware:tokenValidation(caller, req);
-        check middleware:assertAnyRole(caller, req, ["ADMIN"]);
+        check middleware:assertAnyRole(caller, req, ["ADMIN", "SUPER_ADMIN"]);
         check points:updatePointsConfig(caller, req);
     }
 
     // Administrative points adjustment (admin only)
     resource function post admin/points/adjust(http:Caller caller, http:Request req) returns error? {
         check middleware:tokenValidation(caller, req);
-        check middleware:assertAnyRole(caller, req, ["ADMIN", "ADMIN_OPERATOR"]);
+        check middleware:assertAnyRole(caller, req, ["ADMIN", "ADMIN_OPERATOR", "SUPER_ADMIN"]);
         check points:adminAdjustPoints(caller, req);
     }
 
