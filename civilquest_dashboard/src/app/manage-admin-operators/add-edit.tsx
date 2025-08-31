@@ -7,6 +7,8 @@ import LoadingButton from "../../components/ui/button/index";
 import { ApiResponse, AdminOperator } from "@/types";
 import { useForm } from "@/hooks/useForm";
 import { InputField } from "@/components/ui/input";
+import { ComboBox } from "@/components/ui/comboBox";
+import { cityWithProvince } from "@/utils/citiesWithProvince";
 
 interface AddEditProps {
   selectedAdminOperator?: AdminOperator;
@@ -20,7 +22,8 @@ const CreateAdminOperatorSchema = z.object({
   phoneNumber: z
     .string()
     .min(10, "Phone number must be at least 10 characters long"),
-  city: z.string().min(2, "city must be at least 2 characters long"),
+  city: z.string().min(2, "city must be specified"),
+  province: z.string().min(2, "province must be specified"),
 });
 
 const UpdateAdminOperatorSchema = z.object({
@@ -31,6 +34,7 @@ const UpdateAdminOperatorSchema = z.object({
     .string()
     .min(10, "Phone number must be at least 10 characters long"),
   city: z.string().optional().or(z.literal("")),
+  province: z.string().optional().or(z.literal("")),
 });
 
 const AddEdit = ({
@@ -49,6 +53,7 @@ const AddEdit = ({
       password: selectedAdminOperator?.password || "",
       phoneNumber: selectedAdminOperator?.phoneNumber || "",
       city: selectedAdminOperator?.city || "",
+      province: "",
     },
     schema
   );
@@ -56,14 +61,14 @@ const AddEdit = ({
   const handleSubmit = async () => {
     let result: ApiResponse;
     if (validate()) {
-    if (selectedAdminOperator) {
+      if (selectedAdminOperator) {
         const updatedAdminOperator: AdminOperator = {
           _id: selectedAdminOperator._id,
           name: formData.name,
-      email: selectedAdminOperator.email,
-      password: selectedAdminOperator.password as any,
+          email: selectedAdminOperator.email,
+          password: selectedAdminOperator.password as any,
           phoneNumber: formData.phoneNumber,
-      city: selectedAdminOperator.city,
+          city: selectedAdminOperator.city,
         };
         result =
           await useAdminOperatorHook.updateAdminOperator(updatedAdminOperator);
@@ -121,13 +126,39 @@ const AddEdit = ({
         error={errors.phoneNumber}
       />
       {!selectedAdminOperator && (
-        <InputField
-          name={"city"}
-          label={"City"}
-          value={formData.city}
-          onChange={handleChange}
-          error={errors.city}
-        />
+        <>
+          <ComboBox
+            name={"province"}
+            label={"Province"}
+            value={formData.province!}
+            onChange={handleChange}
+            error={errors.province}
+            options={cityWithProvince.map((item) => ({
+              value: item.province,
+              name: item.province,
+            }))}
+          />
+
+          <ComboBox
+            name={"city"}
+            label={"City"}
+            value={formData.city!}
+            onChange={handleChange}
+            error={errors.city}
+            options={(() => {
+              const provinceObj = cityWithProvince.find(
+                (item) => item.province === formData.province
+              );
+              if (provinceObj && Array.isArray(provinceObj.cites)) {
+                return provinceObj.cites.map((city) => ({
+                  value: city,
+                  name: city,
+                }));
+              }
+              return [];
+            })()}
+          />
+        </>
       )}
 
       <LoadingButton

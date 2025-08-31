@@ -16,6 +16,7 @@ import { IoLogOut } from "react-icons/io5";
 import LoadingButton from "../ui/button/index";
 import { useUserContext } from "@/context/userContext";
 import { Roles } from "@/types";
+import Loading from "../ui/loading";
 
 type SidebarItem = {
   name: string;
@@ -26,6 +27,10 @@ type SidebarItem = {
 
 const SideBar = () => {
   const { logout, user } = useUserContext();
+
+  if (!user || !user.role) {
+    return <Loading />;
+  }
 
   const links: SidebarItem[] = [
     {
@@ -88,10 +93,13 @@ const SideBar = () => {
       icon: <FaClipboardList />,
       allowableRoles: [Roles.ADMIN, Roles.SUPER_ADMIN],
     },
-
   ];
 
   const path = usePathname();
+
+  if (!user || !user.role) {
+    return <Loading />;
+  }
 
   return (
     <div className="hidden sm:flex sm:w-64 h-full bg-primary/85 min-h-screen text-white p-4 fixed flex-col justify-between">
