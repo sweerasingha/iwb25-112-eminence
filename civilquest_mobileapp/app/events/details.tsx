@@ -23,7 +23,9 @@ export default function EventDetailsScreen() {
   const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
-    const idToLoad = (currentEvent?.id as string | undefined) || (idParam as string | undefined);
+    const idToLoad =
+      (currentEvent?.id as string | undefined) ||
+      (idParam as string | undefined);
     if (!idToLoad) return;
     let cancelled = false;
     const load = async () => {
@@ -67,21 +69,26 @@ export default function EventDetailsScreen() {
   const participateEvent = async () => {
     setProcessing(true);
     try {
-      await getCurrentLocation();
-      if (errorMsg == null) {
+      const { location: freshLocation, errorMsg: freshError } =
+        await getCurrentLocation();
+      console.log("Current Location:", freshLocation);
+      if (freshError == null && freshLocation) {
         const response = await eventService.participateInEvent({
           eventId: ev.id,
-          latitude: location?.coords.latitude || 0,
-          longitude: location?.coords.longitude || 0,
+          latitude: freshLocation.coords.latitude || 0,
+          longitude: freshLocation.coords.longitude || 0,
         });
-
         if (response.success) {
           Alert.alert("Success", "Successfully participated in event");
-        } else {
         }
       } else {
+        Alert.alert("Location Error", freshError || "Could not get location");
       }
     } catch (error) {
+      Alert.alert(
+        "Error",
+        "An error occurred while participating in the event."
+      );
     } finally {
       setProcessing(false);
     }
@@ -91,12 +98,12 @@ export default function EventDetailsScreen() {
 
   return (
     <View style={globalStyles.container}>
-    <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header Image */}
         <View style={styles.header}>
-      {ev.image_url ? (
+          {ev.image_url ? (
             <View style={styles.imageWrapper}>
-        <Image source={{ uri: ev.image_url }} style={styles.image} />
+              <Image source={{ uri: ev.image_url }} style={styles.image} />
               <LinearGradient
                 colors={["transparent", "rgba(0,0,0,0.7)"]}
                 style={styles.imageOverlay}
@@ -130,9 +137,7 @@ export default function EventDetailsScreen() {
 
         {/* Title & Type */}
         <View style={[globalStyles.card, styles.contentCard]}>
-          <Text style={[globalStyles.h3, styles.title]}>
-            {ev.eventTitle}
-          </Text>
+          <Text style={[globalStyles.h3, styles.title]}>{ev.eventTitle}</Text>
           <Text style={[globalStyles.bodySmall, styles.type]}>
             {ev.eventType}
           </Text>
@@ -224,7 +229,7 @@ export default function EventDetailsScreen() {
                   {(ev.sponsors?.length ?? ev.sponsor?.length) || 0} sponsors
                 </Text>
               </View>
-    ) : null}
+            ) : null}
             {!!ev.reward && (
               <View style={styles.statItem}>
                 <Ionicons name="trophy" size={18} color={COLORS.warning} />
@@ -249,9 +254,7 @@ export default function EventDetailsScreen() {
                 title="Sponsor this Event"
                 variant="secondary"
                 fullWidth
-                onPress={() =>
-                  router.push(`/events/sponsor?eventId=${ev.id}`)
-                }
+                onPress={() => router.push(`/events/sponsor?eventId=${ev.id}`)}
                 style={{ marginTop: SPACING.md }}
                 leftIcon={
                   <Ionicons
@@ -262,7 +265,7 @@ export default function EventDetailsScreen() {
                 }
               />
             </View>
-          ) : (
+          ) : !ev.userApplicationStatus?.isParticipated ? (
             <View style={[globalStyles.card, styles.section]}>
               <Text style={styles.eventHappening}>Event is Ongoing</Text>
               <Button
@@ -276,6 +279,21 @@ export default function EventDetailsScreen() {
                 style={{
                   marginTop: SPACING.md,
                   backgroundColor: COLORS.success,
+                  borderColor: COLORS.success,
+                }}
+              />
+            </View>
+          ) : (
+            <View style={[globalStyles.card, styles.section]}>
+              <Text style={styles.eventHappening}>Event is Ongoing</Text>
+              <Button
+                title={"Participated"}
+                variant="secondary"
+                fullWidth
+                disabled={processing}
+                style={{
+                  marginTop: SPACING.md,
+                  backgroundColor: COLORS.primary,
                   borderColor: COLORS.success,
                 }}
               />
@@ -297,7 +315,12 @@ export default function EventDetailsScreen() {
                       : "Donation"}
                   </Text>
                   {!!s.description && (
-                    <Text style={[globalStyles.caption, { color: COLORS.textSecondary }]}>
+                    <Text
+                      style={[
+                        globalStyles.caption,
+                        { color: COLORS.textSecondary },
+                      ]}
+                    >
                       {s.description}
                     </Text>
                   )}
@@ -305,7 +328,9 @@ export default function EventDetailsScreen() {
               ))}
             </View>
           ) : (
-            <Text style={globalStyles.bodySmall}>No sponsors for this event</Text>
+            <Text style={globalStyles.bodySmall}>
+              No sponsors for this event
+            </Text>
           )}
         </View>
 
