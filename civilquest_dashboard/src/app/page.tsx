@@ -58,11 +58,15 @@ export default function Home() {
 
   useEffect(() => {
     // Fetch initial data
-    const canSeeAnalytics = user?.role === Roles.ADMIN || user?.role === Roles.SUPER_ADMIN;
+    const canSeeAnalytics =
+      user?.role === Roles.ADMIN || user?.role === Roles.SUPER_ADMIN;
     if (canSeeAnalytics) {
       getEventAnalytics({ startDate: "2025-01-01", endDate: "2025-12-31" });
       getUserAnalytics();
-      getSponsorshipAnalytics({ startDate: "2025-01-01", endDate: "2025-12-31" });
+      getSponsorshipAnalytics({
+        startDate: "2025-01-01",
+        endDate: "2025-12-31",
+      });
     }
     fetchEvents();
   }, [user?.role]);
@@ -145,6 +149,9 @@ export default function Home() {
     events?.length > 0;
 
   if (analyticsLoading || eventsLoading) {
+    return <Loading />;
+  }
+  if (!user || !user.role) {
     return <Loading />;
   }
 
