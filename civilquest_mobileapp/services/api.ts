@@ -52,7 +52,7 @@ class ApiService {
         this.setAuthToken(token);
       }
     } catch (error) {
-      console.error("Failed to load stored token:", error);
+      //console.error("Failed to load stored token:", error);
     }
   }
 
@@ -90,7 +90,7 @@ class ApiService {
         return config;
       },
       (error: AxiosError) => {
-        console.error(" Request Error:", error);
+        // console.error(" Request Error:", error);
         return Promise.reject(this.handleError<any>(error));
       }
     );
@@ -126,21 +126,21 @@ class ApiService {
 
         // Log error in development
         if (CONFIG.APP_ENV === "development" && CONFIG.ENABLE_LOGS) {
-          console.error(" API Error:", {
-            method: error.config?.method?.toUpperCase(),
-            url: error.config?.url,
-            status: error.response?.status,
-            message: error.message,
-            data: error.response?.data,
-          });
+          // console.error(" API Error:", {
+          //   method: error.config?.method?.toUpperCase(),
+          //   url: error.config?.url,
+          //   status: error.response?.status,
+          //   message: error.message,
+          //   data: error.response?.data,
+          // });
         }
 
-        console.error(
-          (error.response?.data as any)?.errors?.[0] ||
-            (error.response?.data as any)?.error ||
-            (error.response?.data as any)?.message ||
-            "An error occurred"
-        );
+        // console.error(
+        //   (error.response?.data as any)?.errors?.[0] ||
+        //     (error.response?.data as any)?.error ||
+        //     (error.response?.data as any)?.message ||
+        //     "An error occurred"
+        // );
         Alert.alert(
           "Error",
           (error.response?.data as any)?.errors?.[0] ||
@@ -332,7 +332,7 @@ class ApiService {
       const payload = JSON.parse(atob(this.authToken.split(".")[1]));
       return payload.sub || null; // 'sub' contains the email
     } catch (error) {
-      console.error("Failed to decode auth token:", error);
+      // console.error("Failed to decode auth token:", error);
       return null;
     }
   }
